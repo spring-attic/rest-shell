@@ -58,7 +58,7 @@ public class HistoryCommands implements CommandMarker, ApplicationListener<BaseU
     if(num < 1) {
       return;
     }
-    if(num >= baseUris.size()) {
+    if(num > baseUris.size()) {
       return;
     }
     URI uri = baseUris.get(num - 1);
