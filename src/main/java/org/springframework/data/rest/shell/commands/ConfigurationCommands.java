@@ -57,7 +57,7 @@ public class ConfigurationCommands implements CommandMarker, ApplicationEventPub
     return headers;
   }
 
-  @CliAvailabilityIndicator({"baseUri", "header"})
+  @CliAvailabilityIndicator({"baseUri", "headers list", "headers set", "headers clear"})
   public boolean isBaseUriAvailable() {
     return true;
   }
@@ -109,7 +109,7 @@ public class ConfigurationCommands implements CommandMarker, ApplicationEventPub
    *
    * @throws IOException
    */
-  @CliCommand(value = "dump-headers", help = "Print all HTTP headers in use this session.")
+  @CliCommand(value = "headers list", help = "Print all HTTP headers in use this session.")
   public String headers() throws IOException {
     return mapper.writeValueAsString(headers.toSingleValueMap());
   }
@@ -126,7 +126,7 @@ public class ConfigurationCommands implements CommandMarker, ApplicationEventPub
    *
    * @throws IOException
    */
-  @CliCommand(value = "header", help = "Set an HTTP header for use this session.")
+  @CliCommand(value = "headers set", help = "Set an HTTP header for use this session.")
   public String setHeader(
       @CliOption(key = "name",
                  mandatory = true,
@@ -144,7 +144,7 @@ public class ConfigurationCommands implements CommandMarker, ApplicationEventPub
    *
    * @return
    */
-  @CliCommand(value = "clear-headers", help = "Clear the current HTTP headers.")
+  @CliCommand(value = "headers clear", help = "Clear the current HTTP headers.")
   public String clearHeaders() {
     headers.clear();
     return "HTTP headers cleared...";

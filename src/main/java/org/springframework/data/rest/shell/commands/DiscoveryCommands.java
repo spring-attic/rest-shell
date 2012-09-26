@@ -60,7 +60,7 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
     return resources;
   }
 
-  @CliAvailabilityIndicator({"discover"})
+  @CliAvailabilityIndicator({"discover", "list", "follow"})
   public boolean isDiscoverAvailable() {
     return true;
   }
@@ -80,11 +80,32 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
       @CliOption(key = "",
                  mandatory = false,
                  help = "The base URI to use for this session.",
-                 unspecifiedDefaultValue = "/") String path) throws IOException {
-
+                 unspecifiedDefaultValue = "/") String path) throws IOException, URISyntaxException {
     URI requestUri;
     if("/".equals(path)) {
       requestUri = configCmds.getBaseUri();
+    } else if(path.startsWith("http")) {
+      requestUri = URI.create(path);
+    } else {
+      requestUri = UriComponentsBuilder.fromUri(configCmds.getBaseUri()).path(path).build().toUri();
+    }
+
+    configCmds.setBaseUri(requestUri.toString());
+
+    return list(requestUri.toString());
+  }
+
+  @CliCommand(value = "list", help = "Discover the resources available at a given URI.")
+  public String list(
+      @CliOption(key = "",
+                 mandatory = false,
+                 help = "The URI at which to discover resources.",
+                 unspecifiedDefaultValue = "/") String path) {
+    URI requestUri;
+    if("/".equals(path)) {
+      requestUri = configCmds.getBaseUri();
+    } else if(path.startsWith("http")) {
+      requestUri = URI.create(path);
     } else if(resources.containsKey(path)) {
       requestUri = UriComponentsBuilder.fromUriString(resources.get(path)).build().toUri();
     } else {
@@ -161,7 +182,7 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
    */
   @CliCommand(value = "follow",
               help = "Follows a URI path, sets the base to that new path, and discovers what resources are available.")
-  public String follow(
+  public void follow(
       @CliOption(key = "",
                  mandatory = true,
                  help = "The URI to follow.") String path) throws IOException, URISyntaxException {
@@ -170,7 +191,6 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
     } else {
       configCmds.setBaseUri(path);
     }
-    return discover("/");
   }
 
   private static String pad(String s, int len) {
