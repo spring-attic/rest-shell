@@ -8,11 +8,21 @@
     </encoder>
   </appender>
 
+  <appender name="logfile" class="ch.qos.logback.core.FileAppender">
+    <file>.rest-shell.log</file>
+    <append>true</append>
+    <encoder>
+      <pattern>
+        %d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
+      </pattern>
+    </encoder>
+  </appender>
+
   <logger name="org.springframework.data.rest.shell" level="DEBUG"/>
   <logger name="org.springframework" level="WARN"/>
 
   <root level="INFO">
-    <appender-ref ref="stdout"/>
+    <appender-ref ref="logfile"/>
   </root>
 
 </configuration>

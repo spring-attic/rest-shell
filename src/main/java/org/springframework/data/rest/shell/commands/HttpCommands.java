@@ -40,7 +40,7 @@ public class HttpCommands implements CommandMarker {
   private RestTemplate restTemplate = new RestTemplate();
   private ObjectMapper mapper       = new ObjectMapper();
 
-  @CliAvailabilityIndicator({"get", "post"})
+  @CliAvailabilityIndicator({"get", "post", "put", "delete"})
   public boolean isHttpCommandAvailable() {
     return true;
   }
@@ -91,6 +91,7 @@ public class HttpCommands implements CommandMarker {
     return execute(requestUri, HttpMethod.PUT, data);
   }
 
+  @CliCommand(value = "delete", help = "Issue HTTP DELETE to delete a resource.")
   public String delete(
       @CliOption(key = "",
                  mandatory = true,

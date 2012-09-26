@@ -89,6 +89,10 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
           new HttpMessageConverterExtractor<>(PagableResources.class,
                                               client.getMessageConverters())
       );
+
+      if(res.getLinks().size() == 0) {
+        return "No resources found...";
+      }
     } catch(Throwable t) {
       LOG.error(t.getMessage(), t);
       return "No resources found...";
