@@ -158,7 +158,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
     RequestHelper helper = (null == data ? new RequestHelper() : new RequestHelper(data, MediaType.APPLICATION_JSON));
     ResponseEntity<String> response = restTemplate.execute(requestUri, method, helper, helper);
 
-    ctx.publishEvent(new ResponseEvent(requestUri, response));
+    ctx.publishEvent(new ResponseEvent(requestUri, method, response));
 
     outputResponse(response, buffer);
 
