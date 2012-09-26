@@ -100,6 +100,7 @@ The rest-shell provides the following commands:
 * `headers list` - Print out the currently-set HTTP headers for this session.
 * `history list` - List the URIs previously set as baseUris during this session.
 * `history go` - Jump to a URI by pulling one from the history.
+* `up` - Traverse one level up in the URL hierarchy.
 * `get` - HTTP GET from the given path.
 * `post` - HTTP POST to the given path, passing JSON given in the `--data` parameter.
 * `put` - HTTP PUT to the given path, passing JSON given in the `--data` parameter.
