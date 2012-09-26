@@ -14,58 +14,6 @@ This project is a command-line shell that aims to make writing REST-based applic
 
 The rest-shell provides a number of useful commands for discovering and interacting with REST resources. For example `discover` will discover what resources are available and print out an easily-readable table of rels and URIs that relate to those resources. Once a resource has been discovered, the `rel` of that URI can be used in place of the URI itself in most operations, thus cutting down on the amount of typing needed to issue HTTP requests to your REST resources.
 
-### Example interaction
-
-An example interaction in the rest-shell might look like:
-
-		> bin/rest-shell
-
-		 ___ ___  __ _____  __  _  _     _ _  __
-		| _ \ __/' _/_   _/' _/| || |   / / | \ \
-		| v / _|`._`. | | `._`.| >< |  / / /   > >
-		|_|_\___|___/ |_| |___/|_||_| |_/_/   /_/
-
-		Welcome to the REST shell. For assistance hit TAB or type "help".
-		http://localhost:8080:> discover
-		rel                href
-		========================================================
-		address            http://localhost:8080/address
-		family             http://localhost:8080/family
-		people             http://localhost:8080/person
-		profile            http://localhost:8080/profile
-
-		http://localhost:8080:> follow person
-		rel             href
-		===================================================
-		peeps.Person    http://localhost:8080/person/1
-		peeps.Person    http://localhost:8080/person/2
-		peeps.Person    http://localhost:8080/person/3
-		peeps.search    http://localhost:8080/person/search
-
-		http://localhost:8080/person:> get 1
-		> GET http://localhost:8080/person/1
-
-		< 200 OK
-		< ETag: "2"
-		< Content-Type: application/json
-		<
-		{
-			"links" : [ {
-				"rel" : "self",
-				"href" : "http://localhost:8080/person/1"
-			}, {
-				"rel" : "people.Person.profiles",
-				"href" : "http://localhost:8080/person/1/profiles"
-			}, {
-				"rel" : "people.Person.addresses",
-				"href" : "http://localhost:8080/person/1/addresses"
-			}, {
-				"rel" : "added-link",
-				"href" : "http://localhost:8080/person"
-			} ],
-			"name" : "John Doe"
-		}
-
 ### Discovering resources
 
 The rest-shell is aimed at making it easier to interact with REST resources by managing the session `baseUri` much like a directory in a filesystem. Whenever resources are `discover`ed, you can then `follow` that resource link to set a new baseUri, which means you can then use quick-to-type and simple relative URIs. Here's an example of discovering root resources, then following one of them by referencing its `rel` value, and using a relative URI to access resources under that new baseUri:
