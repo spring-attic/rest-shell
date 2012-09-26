@@ -107,9 +107,19 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
     } else if(path.startsWith("http")) {
       requestUri = URI.create(path);
     } else if(resources.containsKey(path)) {
-      requestUri = UriComponentsBuilder.fromUriString(resources.get(path)).build().toUri();
+      requestUri = UriComponentsBuilder.fromUriString(resources.get(path))
+                                       .build()
+                                       .toUri();
+    } else if("/".equals(configCmds.getBaseUri().getPath())) {
+      requestUri = UriComponentsBuilder.fromUri(configCmds.getBaseUri())
+                                       .path(path)
+                                       .build()
+                                       .toUri();
     } else {
-      requestUri = UriComponentsBuilder.fromUri(configCmds.getBaseUri()).path(path).build().toUri();
+      requestUri = UriComponentsBuilder.fromUri(configCmds.getBaseUri())
+                                       .pathSegment(path)
+                                       .build()
+                                       .toUri();
     }
 
     Resources res;
