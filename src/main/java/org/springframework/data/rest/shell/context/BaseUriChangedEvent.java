@@ -1,4 +1,4 @@
-package org.springframework.data.rest.shell;
+package org.springframework.data.rest.shell.context;
 
 import java.net.URI;
 

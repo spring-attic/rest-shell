@@ -9,6 +9,9 @@ import java.util.Map;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.ApplicationEventPublisherAware;
+import org.springframework.data.rest.shell.context.ResponseEvent;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -27,10 +30,12 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
+ * Commands that issue the HTTP requests.
+ *
  * @author Jon Brisbin
  */
 @Component
-public class HttpCommands implements CommandMarker {
+public class HttpCommands implements CommandMarker, ApplicationEventPublisherAware {
 
   @Autowired
   private ConfigurationCommands configCmds;
@@ -39,12 +44,27 @@ public class HttpCommands implements CommandMarker {
   @Autowired(required = false)
   private RestTemplate restTemplate = new RestTemplate();
   private ObjectMapper mapper       = new ObjectMapper();
+  private ApplicationEventPublisher ctx;
+
+  @Override public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
+    this.ctx = applicationEventPublisher;
+  }
 
   @CliAvailabilityIndicator({"get", "post", "put", "delete"})
   public boolean isHttpCommandAvailable() {
     return true;
   }
 
+  /**
+   * HTTP GET to retrieve a resource.
+   *
+   * @param path
+   *     URI to resource.
+   * @param params
+   *     URL query parameters to pass for paging and search.
+   *
+   * @return
+   */
   @CliCommand(value = "get", help = "Issue HTTP GET to a resource.")
   public String get(
       @CliOption(key = "",
@@ -66,6 +86,16 @@ public class HttpCommands implements CommandMarker {
     return execute(requestUri, HttpMethod.GET, null);
   }
 
+  /**
+   * HTTP POST to create a new resource.
+   *
+   * @param path
+   *     URI to resource.
+   * @param data
+   *     The JSON data to send.
+   *
+   * @return
+   */
   @CliCommand(value = "post", help = "Issue HTTP POST to create a new resource.")
   public String post(
       @CliOption(key = "",
@@ -79,6 +109,16 @@ public class HttpCommands implements CommandMarker {
     return execute(requestUri, HttpMethod.POST, data);
   }
 
+  /**
+   * HTTP PUT to update a resource.
+   *
+   * @param path
+   *     URI to resource.
+   * @param data
+   *     The JSON data to send.
+   *
+   * @return
+   */
   @CliCommand(value = "put", help = "Issue HTTP PUT to update a resource.")
   public String put(
       @CliOption(key = "",
@@ -91,6 +131,14 @@ public class HttpCommands implements CommandMarker {
     return execute(requestUri, HttpMethod.PUT, data);
   }
 
+  /**
+   * HTTP DELETE to delete a resource.
+   *
+   * @param path
+   *     URI to resource.
+   *
+   * @return
+   */
   @CliCommand(value = "delete", help = "Issue HTTP DELETE to delete a resource.")
   public String delete(
       @CliOption(key = "",
@@ -109,6 +157,8 @@ public class HttpCommands implements CommandMarker {
 
     RequestHelper helper = (null == data ? new RequestHelper() : new RequestHelper(data, MediaType.APPLICATION_JSON));
     ResponseEntity<String> response = restTemplate.execute(requestUri, method, helper, helper);
+
+    ctx.publishEvent(new ResponseEvent(requestUri, response));
 
     outputResponse(response, buffer);
 

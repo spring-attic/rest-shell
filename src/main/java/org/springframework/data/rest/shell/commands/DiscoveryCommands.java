@@ -51,6 +51,11 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
     this.ctx = applicationEventPublisher;
   }
 
+  /**
+   * Get the discovered resources.
+   *
+   * @return
+   */
   public Map<String, String> getResources() {
     return resources;
   }
@@ -60,6 +65,16 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
     return true;
   }
 
+  /**
+   * Issue a GET and discover what resources are available by looking in the links property of the JSON.
+   *
+   * @param path
+   *     URI to resource.
+   *
+   * @return
+   *
+   * @throws IOException
+   */
   @CliCommand(value = "discover", help = "Discover the resources available at a given URI.")
   public String discover(
       @CliOption(key = "",
@@ -133,6 +148,17 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
     return sb.toString();
   }
 
+  /**
+   * Follow a URI by setting the baseUri to this path, then discovering what resources are available there.
+   *
+   * @param path
+   *     URI to resource.
+   *
+   * @return
+   *
+   * @throws IOException
+   * @throws URISyntaxException
+   */
   @CliCommand(value = "follow",
               help = "Follows a URI path, sets the base to that new path, and discovers what resources are available.")
   public String follow(
@@ -151,13 +177,6 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
     char[] pad = new char[len - s.length()];
     Arrays.fill(pad, ' ');
     return s + new String(pad);
-  }
-
-  private static void append(String rel,
-                             String href,
-                             int maxRelLen,
-                             int maxHrefLen,
-                             StringBuilder sb) {
   }
 
 }

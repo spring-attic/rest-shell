@@ -8,7 +8,8 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
-import org.springframework.data.rest.shell.BaseUriChangedEvent;
+import org.springframework.data.rest.shell.context.BaseUriChangedEvent;
+import org.springframework.data.rest.shell.context.HeaderSetEvent;
 import org.springframework.http.HttpHeaders;
 import org.springframework.shell.core.CommandMarker;
 import org.springframework.shell.core.annotation.CliAvailabilityIndicator;
@@ -18,6 +19,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
+ * Configuration commands responsible for changing the settings of the session.
+ *
  * @author Jon Brisbin
  */
 @Component
@@ -36,10 +39,20 @@ public class ConfigurationCommands implements CommandMarker, ApplicationEventPub
     this.ctx = applicationEventPublisher;
   }
 
+  /**
+   * Get the current baseUri property.
+   *
+   * @return
+   */
   public URI getBaseUri() {
     return baseUri;
   }
 
+  /**
+   * Get the current set of HTTP headers.
+   *
+   * @return
+   */
   public HttpHeaders getHeaders() {
     return headers;
   }
@@ -49,6 +62,16 @@ public class ConfigurationCommands implements CommandMarker, ApplicationEventPub
     return true;
   }
 
+  /**
+   * Set the session's baseUri to use from this point forward.
+   *
+   * @param baseUri
+   *     Base URI to use for future relative URI calculations.
+   *
+   * @return
+   *
+   * @throws URISyntaxException
+   */
   @CliCommand(value = "baseUri", help = "Set the base URI to use from this point forward.")
   public String setBaseUri(
       @CliOption(key = "",
@@ -79,11 +102,30 @@ public class ConfigurationCommands implements CommandMarker, ApplicationEventPub
     return "Base URI set to '" + this.baseUri + "'";
   }
 
+  /**
+   * Print out the current HTTP headers.
+   *
+   * @return
+   *
+   * @throws IOException
+   */
   @CliCommand(value = "dump-headers", help = "Print all HTTP headers in use this session.")
   public String headers() throws IOException {
     return mapper.writeValueAsString(headers.toSingleValueMap());
   }
 
+  /**
+   * Set an HTTP header to use from this point forward in the session.
+   *
+   * @param name
+   *     Name of the HTTP header.
+   * @param value
+   *     Value of this header.
+   *
+   * @return
+   *
+   * @throws IOException
+   */
   @CliCommand(value = "header", help = "Set an HTTP header for use this session.")
   public String setHeader(
       @CliOption(key = "name",
@@ -93,9 +135,15 @@ public class ConfigurationCommands implements CommandMarker, ApplicationEventPub
                  mandatory = true,
                  help = "The value of the HTTP header.") String value) throws IOException {
     headers.set(name, value);
+    ctx.publishEvent(new HeaderSetEvent(name, headers));
     return mapper.writeValueAsString(headers.toSingleValueMap());
   }
 
+  /**
+   * Clear the HTTP headers for this session.
+   *
+   * @return
+   */
   @CliCommand(value = "clear-headers", help = "Clear the current HTTP headers.")
   public String clearHeaders() {
     headers.clear();
