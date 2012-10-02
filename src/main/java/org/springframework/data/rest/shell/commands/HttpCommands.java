@@ -4,10 +4,21 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.nio.file.FileVisitOption;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.codehaus.jackson.map.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
@@ -36,6 +47,8 @@ import org.springframework.web.util.UriComponentsBuilder;
  */
 @Component
 public class HttpCommands implements CommandMarker, ApplicationEventPublisherAware {
+
+  private static final Logger LOG = LoggerFactory.getLogger(HttpCommands.class);
 
   @Autowired
   private ConfigurationCommands configCmds;
@@ -103,10 +116,44 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
                  help = "The path to the resource collection.",
                  unspecifiedDefaultValue = "") String path,
       @CliOption(key = "data",
-                 mandatory = true,
-                 help = "The JSON data to use as the resource.") Map data) {
-    URI requestUri = createUriComponentsBuilder(path).build().toUri();
-    return execute(requestUri, HttpMethod.POST, data);
+                 mandatory = false,
+                 help = "The JSON data to use as the resource.") Map data,
+      @CliOption(key = "from",
+                 mandatory = false,
+                 help = "The directory from which to read JSON files to POST to the server.") String fromDir)
+      throws IOException {
+    final URI requestUri = createUriComponentsBuilder(path).build().toUri();
+    if(null != data) {
+      return execute(requestUri, HttpMethod.POST, data);
+    } else if(null != fromDir) {
+      final AtomicInteger numItems = new AtomicInteger(0);
+
+      Files.walkFileTree(
+          Paths.get(fromDir),
+          EnumSet.of(FileVisitOption.FOLLOW_LINKS),
+          Integer.MAX_VALUE,
+          new SimpleFileVisitor<Path>() {
+            @Override public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                throws IOException {
+              if(file.toString().endsWith("json")) {
+                byte[] jsonData = Files.readAllBytes(file);
+                String response = execute(requestUri,
+                                          HttpMethod.POST,
+                                          mapper.readValue(jsonData, Map.class));
+                if(LOG.isDebugEnabled()) {
+                  LOG.debug(response);
+                }
+                numItems.incrementAndGet();
+              }
+              return FileVisitResult.CONTINUE;
+            }
+          }
+      );
+
+      return numItems.get() + " items POSTed to the server.";
+    } else {
+      return null;
+    }
   }
 
   /**

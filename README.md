@@ -88,6 +88,12 @@ The rest-shell can do basic parsing of JSON data within the shell (though there 
 			"name" : "John Doe"
 		}
 
+If your needs of representing JSON get more complicated than what the spring-shell interface can handle, you can create a directory somewhere with `.json` files in it, one file per entitiy, and use the `--from` option to the `post` command. This will walk the directory and make a `POST` request for each `.json` file found.
+
+	http://localhost:8080/person:> post --from work/people_to_load
+	128 items POSTed to the server.
+	http://localhost:8080/person:>
+
 ### Commands
 
 The rest-shell provides the following commands:
