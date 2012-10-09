@@ -1,6 +1,7 @@
 package org.springframework.data.rest.shell.commands;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -18,6 +19,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -59,6 +61,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
   private DiscoveryCommands     discoveryCmds;
   @Autowired(required = false)
   private RestTemplate restTemplate = new RestTemplate();
+  @Autowired(required = false)
   private ObjectMapper mapper       = new ObjectMapper();
   private ApplicationEventPublisher             ctx;
   private HttpMessageConverterExtractor<String> extractor;
@@ -297,6 +300,11 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
     private MediaType contentType;
     private HttpMessageConverterExtractor<String> extractor = new HttpMessageConverterExtractor<>(String.class,
                                                                                                   restTemplate.getMessageConverters());
+    private ObjectMapper                          mapper    = new ObjectMapper();
+
+    {
+      mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
+    }
 
     private RequestHelper() {
     }
@@ -318,6 +326,16 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
 
     @Override public ResponseEntity<String> extractData(ClientHttpResponse response) throws IOException {
       String body = extractor.extractData(response);
+
+      MediaType ct = response.getHeaders().getContentType();
+      if(null != ct && ct.getSubtype().endsWith("json")) {
+        // Pretty-print the JSON
+        Map m = mapper.readValue(body.getBytes(), Map.class);
+        StringWriter sw = new StringWriter();
+        mapper.writeValue(sw, m);
+        body = sw.toString();
+      }
+
       return new ResponseEntity<>(body, response.getHeaders(), response.getStatusCode());
     }
   }
