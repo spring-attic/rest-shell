@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -19,6 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
@@ -34,6 +36,7 @@ import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 import org.springframework.shell.support.util.OsUtils;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.DefaultResponseErrorHandler;
 import org.springframework.web.client.HttpMessageConverterExtractor;
 import org.springframework.web.client.RequestCallback;
 import org.springframework.web.client.ResponseExtractor;
@@ -46,7 +49,7 @@ import org.springframework.web.util.UriComponentsBuilder;
  * @author Jon Brisbin
  */
 @Component
-public class HttpCommands implements CommandMarker, ApplicationEventPublisherAware {
+public class HttpCommands implements CommandMarker, ApplicationEventPublisherAware, InitializingBean {
 
   private static final Logger LOG = LoggerFactory.getLogger(HttpCommands.class);
 
@@ -57,10 +60,19 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
   @Autowired(required = false)
   private RestTemplate restTemplate = new RestTemplate();
   private ObjectMapper mapper       = new ObjectMapper();
-  private ApplicationEventPublisher ctx;
+  private ApplicationEventPublisher             ctx;
+  private HttpMessageConverterExtractor<String> extractor;
 
   @Override public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
     this.ctx = applicationEventPublisher;
+  }
+
+  @Override public void afterPropertiesSet() throws Exception {
+    extractor = new HttpMessageConverterExtractor<>(String.class, restTemplate.getMessageConverters());
+    restTemplate.setErrorHandler(new DefaultResponseErrorHandler() {
+      @Override public void handleError(ClientHttpResponse response) throws IOException {
+      }
+    });
   }
 
   @CliAvailabilityIndicator({"get", "post", "put", "delete"})
@@ -128,8 +140,14 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
     } else if(null != fromDir) {
       final AtomicInteger numItems = new AtomicInteger(0);
 
+      Path filePath = Paths.get(fromDir);
+
+      if(!Files.exists(filePath)) {
+        throw new IllegalArgumentException("Path " + fromDir + " not found.");
+      }
+
       Files.walkFileTree(
-          Paths.get(fromDir),
+          filePath,
           EnumSet.of(FileVisitOption.FOLLOW_LINKS),
           Integer.MAX_VALUE,
           new SimpleFileVisitor<Path>() {
@@ -152,7 +170,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
 
       return numItems.get() + " items POSTed to the server.";
     } else {
-      return null;
+      return execute(requestUri, HttpMethod.POST, new HashMap(0));
     }
   }
 

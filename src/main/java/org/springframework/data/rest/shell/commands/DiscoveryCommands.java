@@ -24,6 +24,7 @@ import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 import org.springframework.shell.support.util.OsUtils;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.HttpMessageConverterExtractor;
 import org.springframework.web.client.RequestCallback;
 import org.springframework.web.client.RestTemplate;
@@ -129,7 +130,10 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
           HttpMethod.GET,
           new RequestCallback() {
             @Override public void doWithRequest(ClientHttpRequest request) throws IOException {
-              request.getHeaders().setAccept(Arrays.asList(COMPACT_JSON));
+              request.getHeaders().setAll(configCmds.getHeaders().toSingleValueMap());
+              if(CollectionUtils.isEmpty(request.getHeaders().getAccept())) {
+                request.getHeaders().setAccept(Arrays.asList(COMPACT_JSON));
+              }
             }
           },
           new HttpMessageConverterExtractor<>(PagableResources.class,
