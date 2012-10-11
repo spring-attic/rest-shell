@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
@@ -28,10 +29,13 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.data.rest.shell.context.ResponseEvent;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.ClientHttpRequest;
+import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.ClientHttpResponse;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.shell.core.CommandMarker;
 import org.springframework.shell.core.annotation.CliAvailabilityIndicator;
 import org.springframework.shell.core.annotation.CliCommand;
@@ -41,6 +45,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.DefaultResponseErrorHandler;
 import org.springframework.web.client.HttpMessageConverterExtractor;
 import org.springframework.web.client.RequestCallback;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.ResponseErrorHandler;
 import org.springframework.web.client.ResponseExtractor;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -59,10 +65,11 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
   private ConfigurationCommands configCmds;
   @Autowired
   private DiscoveryCommands     discoveryCmds;
+  private ClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
   @Autowired(required = false)
-  private RestTemplate restTemplate = new RestTemplate();
+  private RestTemplate             restTemplate   = new RestTemplate(requestFactory);
   @Autowired(required = false)
-  private ObjectMapper mapper       = new ObjectMapper();
+  private ObjectMapper             mapper         = new ObjectMapper();
   private ApplicationEventPublisher             ctx;
   private HttpMessageConverterExtractor<String> extractor;
 
@@ -78,9 +85,23 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
     });
   }
 
-  @CliAvailabilityIndicator({"get", "post", "put", "delete"})
+  @CliAvailabilityIndicator({"timeout", "get", "post", "put", "delete"})
   public boolean isHttpCommandAvailable() {
     return true;
+  }
+
+  @CliCommand(value = "timeout", help = "Set the read timeout for requests.")
+  public void timeout(@CliOption(key = "",
+                                 mandatory = true,
+                                 help = "The timeout (in milliseconds) to wait for a response.",
+                                 unspecifiedDefaultValue = "30000") int timeout) {
+    if(requestFactory instanceof SimpleClientHttpRequestFactory) {
+      ((SimpleClientHttpRequestFactory)requestFactory).setReadTimeout(timeout);
+    } else {
+      if(LOG.isWarnEnabled()) {
+        LOG.warn("Cannot set timeout on ClientHttpRequestFactory type " + requestFactory.getClass().getName());
+      }
+    }
   }
 
   /**
@@ -111,7 +132,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
     }
     URI requestUri = ucb.build().toUri();
 
-    return execute(requestUri, HttpMethod.GET, null);
+    return execute(requestUri, HttpMethod.GET, null, false);
   }
 
   /**
@@ -135,11 +156,14 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
                  help = "The JSON data to use as the resource.") Map data,
       @CliOption(key = "from",
                  mandatory = false,
-                 help = "The directory from which to read JSON files to POST to the server.") String fromDir)
-      throws IOException {
+                 help = "The directory from which to read JSON files to POST to the server.") String fromDir,
+      @CliOption(key = "follow",
+                 mandatory = false,
+                 help = "If a 201 is returned, immediately follow the Location header.",
+                 unspecifiedDefaultValue = "false") final boolean followOnCreate) throws IOException {
     final URI requestUri = createUriComponentsBuilder(path).build().toUri();
     if(null != data) {
-      return execute(requestUri, HttpMethod.POST, data);
+      return execute(requestUri, HttpMethod.POST, data, followOnCreate);
     } else if(null != fromDir) {
       final AtomicInteger numItems = new AtomicInteger(0);
 
@@ -160,7 +184,8 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
                 byte[] jsonData = Files.readAllBytes(file);
                 String response = execute(requestUri,
                                           HttpMethod.POST,
-                                          mapper.readValue(jsonData, Map.class));
+                                          mapper.readValue(jsonData, Map.class),
+                                          followOnCreate);
                 if(LOG.isDebugEnabled()) {
                   LOG.debug(response);
                 }
@@ -173,7 +198,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
 
       return numItems.get() + " items POSTed to the server.";
     } else {
-      return execute(requestUri, HttpMethod.POST, new HashMap(0));
+      return execute(requestUri, HttpMethod.POST, new HashMap(0), followOnCreate);
     }
   }
 
@@ -196,7 +221,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
                  mandatory = true,
                  help = "The JSON data to use as the resource.") Map data) {
     URI requestUri = createUriComponentsBuilder(path).build().toUri();
-    return execute(requestUri, HttpMethod.PUT, data);
+    return execute(requestUri, HttpMethod.PUT, data, false);
   }
 
   /**
@@ -213,21 +238,55 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
                  mandatory = true,
                  help = "Issue HTTP DELETE to delete a resource.") String path) {
     URI requestUri = createUriComponentsBuilder(path).build().toUri();
-    return execute(requestUri, HttpMethod.DELETE, null);
+    return execute(requestUri, HttpMethod.DELETE, null, false);
   }
 
-  public String execute(URI requestUri,
-                        HttpMethod method,
-                        Map data) {
-    StringBuilder buffer = new StringBuilder();
+  public String execute(final URI requestUri,
+                        final HttpMethod method,
+                        final Map data,
+                        final boolean followOnCreate) {
+    final StringBuilder buffer = new StringBuilder();
+
+    ResponseErrorHandler origErrHandler = restTemplate.getErrorHandler();
+    RequestHelper helper = (null == data ? new RequestHelper() : new RequestHelper(data, MediaType.APPLICATION_JSON));
+    ResponseEntity<String> response;
+    try {
+      restTemplate.setErrorHandler(new ResponseErrorHandler() {
+        @Override public boolean hasError(ClientHttpResponse response) throws IOException {
+          HttpStatus status = response.getStatusCode();
+          return (status == HttpStatus.BAD_GATEWAY || status == HttpStatus.GATEWAY_TIMEOUT);
+        }
+
+        @Override public void handleError(ClientHttpResponse response) throws IOException {
+          if(LOG.isWarnEnabled()) {
+            LOG.warn("Client encountered an error " + response.getRawStatusCode() + ". Retrying...");
+          }
+          System.out.println(execute(requestUri, method, data, followOnCreate));
+        }
+      });
+
+      response = restTemplate.execute(requestUri, method, helper, helper);
+
+    } catch(ResourceAccessException e) {
+      if(LOG.isWarnEnabled()) {
+        LOG.warn("Client encountered an error. Retrying. (" + e.getMessage() + ")", e);
+      }
+      // Calling this method recursively results in hang, so just retry once.
+      response = restTemplate.execute(requestUri, method, helper, helper);
+    } finally {
+      restTemplate.setErrorHandler(origErrHandler);
+    }
+
+    if(followOnCreate && response.getStatusCode() == HttpStatus.CREATED) {
+      try {
+        configCmds.setBaseUri(response.getHeaders().getFirst("Location"));
+      } catch(URISyntaxException e) {
+        LOG.error("Error following Location header: " + e.getMessage(), e);
+      }
+    }
 
     outputRequest(method.name(), requestUri, buffer);
-
-    RequestHelper helper = (null == data ? new RequestHelper() : new RequestHelper(data, MediaType.APPLICATION_JSON));
-    ResponseEntity<String> response = restTemplate.execute(requestUri, method, helper, helper);
-
     ctx.publishEvent(new ResponseEvent(requestUri, method, response));
-
     outputResponse(response, buffer);
 
     return buffer.toString();
@@ -267,7 +326,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
     buffer.append(OsUtils.LINE_SEPARATOR);
   }
 
-  private static void outputResponse(ResponseEntity<String> response, StringBuilder buffer) {
+  private void outputResponse(ResponseEntity<String> response, StringBuilder buffer) {
     buffer.append("< ")
           .append(response.getStatusCode().value())
           .append(" ")
