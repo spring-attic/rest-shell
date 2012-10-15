@@ -1,5 +1,15 @@
 # Spring HATEOAS-compliant REST shell
 
+# Installing the binaries
+
+Download the binary .tar.gz package:
+
+(https://github.com/jbrisbin/rest-shell/downloads)[https://github.com/jbrisbin/rest-shell/downloads]
+
+		tar -zxvf rest-shell-1.0.0.RELEASE.tar.gz
+		cd rest-shell-1.0.0.RELEASE
+		bin/rest-shell
+
 # Building and Running
 
 		git clone git://github.com/jbrisbin/rest-shell.git
@@ -99,7 +109,8 @@ If your needs of representing JSON get more complicated than what the spring-she
 The rest-shell provides the following commands:
 
 * `discover` - Find out what resources are available at the given URI. If no URI is given, use the baseUri.
-* `follow` - Set the baseUri and discover what resources are available at this new URI.
+* `follow` - Set the baseUri to the URI assigned to this given `rel` but do not discover resources.
+* `list` - Discover the resources available at the current baseUri.
 * `baseUri` - Set the base URI used for this point forward in the session. Relative URIs will be calculated relative to this setting.
 * `headers set` - Set an HTTP header by passing this command a `--name` and `--value` parameter.
 * `headers clear` - Clear all HTTP headers set in this session.
