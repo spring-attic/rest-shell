@@ -99,7 +99,7 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
 
     configCmds.setBaseUri(requestUri.toString());
 
-    return list(requestUri.toString());
+    return list(requestUri.toString(), null);
   }
 
   @CliCommand(value = "list", help = "Discover the resources available at a given URI.")
@@ -107,7 +107,10 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
       @CliOption(key = "",
                  mandatory = false,
                  help = "The URI at which to discover resources.",
-                 unspecifiedDefaultValue = "/") String path) {
+                 unspecifiedDefaultValue = "/") String path,
+      @CliOption(key = "params",
+                 mandatory = false,
+                 help = "Query parameters to add to the URL.") Map params) {
     URI requestUri;
     if("/".equals(path)) {
       requestUri = configCmds.getBaseUri();
@@ -127,6 +130,14 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
                                        .pathSegment(path)
                                        .build()
                                        .toUri();
+    }
+
+    if(null != params) {
+      UriComponentsBuilder urib = UriComponentsBuilder.fromUri(requestUri);
+      for(Object key : params.keySet()) {
+        urib.queryParam(key.toString(), params.get(key));
+      }
+      requestUri = urib.build().toUri();
     }
 
     ExtractLinksHelper elh = new ExtractLinksHelper();
