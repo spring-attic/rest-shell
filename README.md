@@ -4,7 +4,7 @@
 
 Download the binary .tar.gz package:
 
-(https://github.com/jbrisbin/rest-shell/downloads)[https://github.com/jbrisbin/rest-shell/downloads]
+[https://github.com/jbrisbin/rest-shell/downloads](https://github.com/jbrisbin/rest-shell/downloads)
 
 		tar -zxvf rest-shell-1.0.0.RELEASE.tar.gz
 		cd rest-shell-1.0.0.RELEASE
@@ -103,6 +103,12 @@ If your needs of representing JSON get more complicated than what the spring-she
 	http://localhost:8080/person:> post --from work/people_to_load
 	128 items POSTed to the server.
 	http://localhost:8080/person:>
+
+### Passing query parameters
+
+If you're calling URLs that require query parameters, you'll need to pass those as a JSON-like fragment in the `--params` parameter to the `get` and `list` commands. Here's an example of calling a URL that expects parameter input:
+
+		http://localhost:8080/person:> get search/byName --params "{name:"John Doe"}"
 
 ### Commands
 
