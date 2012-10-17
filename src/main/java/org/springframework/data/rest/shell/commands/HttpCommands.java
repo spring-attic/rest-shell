@@ -122,7 +122,10 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
                  unspecifiedDefaultValue = "") String path,
       @CliOption(key = "params",
                  mandatory = false,
-                 help = "Query parameters to add to the URL.") Map params) {
+                 help = "Query parameters to add to the URL as a simplified JSON fragment '{paramName:\"paramValue\"}'.") Map params,
+      @CliOption(key = "output",
+                 mandatory = false,
+                 help = "The path to dump the output to.") String outputPath) {
     UriComponentsBuilder ucb = createUriComponentsBuilder(path);
     if(null != params) {
       for(Object key : params.keySet()) {
@@ -132,7 +135,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
     }
     URI requestUri = ucb.build().toUri();
 
-    return execute(requestUri, HttpMethod.GET, null, false);
+    return execute(requestUri, HttpMethod.GET, null, false, outputPath);
   }
 
   /**
@@ -159,11 +162,14 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
                  help = "The directory from which to read JSON files to POST to the server.") String fromDir,
       @CliOption(key = "follow",
                  mandatory = false,
-                 help = "If a 201 is returned, immediately follow the Location header.",
-                 unspecifiedDefaultValue = "false") final boolean followOnCreate) throws IOException {
+                 help = "If a Location header is returned, immediately follow it.",
+                 unspecifiedDefaultValue = "false") final boolean followOnCreate,
+      @CliOption(key = "output",
+                 mandatory = false,
+                 help = "The path to dump the output to.") final String outputPath) throws IOException {
     final URI requestUri = createUriComponentsBuilder(path).build().toUri();
     if(null != data) {
-      return execute(requestUri, HttpMethod.POST, data, followOnCreate);
+      return execute(requestUri, HttpMethod.POST, data, followOnCreate, outputPath);
     } else if(null != fromDir) {
       final AtomicInteger numItems = new AtomicInteger(0);
 
@@ -173,32 +179,46 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
         throw new IllegalArgumentException("Path " + fromDir + " not found.");
       }
 
-      Files.walkFileTree(
-          filePath,
-          EnumSet.of(FileVisitOption.FOLLOW_LINKS),
-          Integer.MAX_VALUE,
-          new SimpleFileVisitor<Path>() {
-            @Override public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                throws IOException {
-              if(file.toString().endsWith("json")) {
-                byte[] jsonData = Files.readAllBytes(file);
-                String response = execute(requestUri,
-                                          HttpMethod.POST,
-                                          mapper.readValue(jsonData, Map.class),
-                                          followOnCreate);
-                if(LOG.isDebugEnabled()) {
-                  LOG.debug(response);
+      if(Files.isDirectory(filePath)) {
+        Files.walkFileTree(
+            filePath,
+            EnumSet.of(FileVisitOption.FOLLOW_LINKS),
+            Integer.MAX_VALUE,
+            new SimpleFileVisitor<Path>() {
+              @Override public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                  throws IOException {
+                if(file.toString().endsWith("json")) {
+                  byte[] jsonData = Files.readAllBytes(file);
+                  String response = execute(requestUri,
+                                            HttpMethod.POST,
+                                            mapper.readValue(jsonData, Map.class),
+                                            followOnCreate,
+                                            outputPath);
+                  if(LOG.isDebugEnabled()) {
+                    LOG.debug(response);
+                  }
+                  numItems.incrementAndGet();
                 }
-                numItems.incrementAndGet();
+                return FileVisitResult.CONTINUE;
               }
-              return FileVisitResult.CONTINUE;
             }
-          }
-      );
+        );
+      } else {
+        byte[] jsonData = Files.readAllBytes(filePath);
+        String response = execute(requestUri,
+                                  HttpMethod.POST,
+                                  mapper.readValue(jsonData, Map.class),
+                                  followOnCreate,
+                                  outputPath);
+        if(LOG.isDebugEnabled()) {
+          LOG.debug(response);
+        }
+        numItems.incrementAndGet();
+      }
 
       return numItems.get() + " items POSTed to the server.";
     } else {
-      return execute(requestUri, HttpMethod.POST, new HashMap(0), followOnCreate);
+      return execute(requestUri, HttpMethod.POST, new HashMap(0), followOnCreate, outputPath);
     }
   }
 
@@ -219,9 +239,12 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
                  help = "The path to the resource.") String path,
       @CliOption(key = "data",
                  mandatory = true,
-                 help = "The JSON data to use as the resource.") Map data) {
+                 help = "The JSON data to use as the resource.") Map data,
+      @CliOption(key = "output",
+                 mandatory = false,
+                 help = "The path to dump the output to.") String outputPath) {
     URI requestUri = createUriComponentsBuilder(path).build().toUri();
-    return execute(requestUri, HttpMethod.PUT, data, false);
+    return execute(requestUri, HttpMethod.PUT, data, false, outputPath);
   }
 
   /**
@@ -236,15 +259,19 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
   public String delete(
       @CliOption(key = "",
                  mandatory = true,
-                 help = "Issue HTTP DELETE to delete a resource.") String path) {
+                 help = "Issue HTTP DELETE to delete a resource.") String path,
+      @CliOption(key = "output",
+                 mandatory = false,
+                 help = "The path to dump the output to.") String outputPath) {
     URI requestUri = createUriComponentsBuilder(path).build().toUri();
-    return execute(requestUri, HttpMethod.DELETE, null, false);
+    return execute(requestUri, HttpMethod.DELETE, null, false, outputPath);
   }
 
   public String execute(final URI requestUri,
                         final HttpMethod method,
                         final Map data,
-                        final boolean followOnCreate) {
+                        final boolean followOnCreate,
+                        final String outputPath) {
     final StringBuilder buffer = new StringBuilder();
 
     ResponseErrorHandler origErrHandler = restTemplate.getErrorHandler();
@@ -261,7 +288,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
           if(LOG.isWarnEnabled()) {
             LOG.warn("Client encountered an error " + response.getRawStatusCode() + ". Retrying...");
           }
-          System.out.println(execute(requestUri, method, data, followOnCreate));
+          System.out.println(execute(requestUri, method, data, followOnCreate, outputPath));
         }
       });
 
@@ -289,7 +316,17 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
     ctx.publishEvent(new ResponseEvent(requestUri, method, response));
     outputResponse(response, buffer);
 
-    return buffer.toString();
+    if(null != outputPath) {
+      try {
+        Files.write(Paths.get(outputPath), buffer.toString().getBytes());
+      } catch(IOException e) {
+        LOG.error(e.getMessage(), e);
+        throw new IllegalArgumentException(e);
+      }
+      return ">> " + outputPath;
+    } else {
+      return buffer.toString();
+    }
   }
 
   private UriComponentsBuilder createUriComponentsBuilder(String path) {

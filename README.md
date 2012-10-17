@@ -110,6 +110,34 @@ If you're calling URLs that require query parameters, you'll need to pass those 
 
 		http://localhost:8080/person:> get search/byName --params "{name:"John Doe"}"
 
+### Outputing results to a file
+
+It's not always desirable to output the results of an HTTP request to the screen. It's handy for debugging but sometimes you want to save the results of a request because they're not easily reproducible or any number of other equally valid reasons. All the HTTP commands take an `--output` parameter that writes the results of an HTTP operation to the given file. For example, to output the above search to a file:
+
+		http://localhost:8080/person:> get search/byName --params "{name:"John Doe"}" --output by_name.txt
+		>> by_name.txt
+		http://localhost:8080/person:>
+
+### Sending complex JSON
+
+Because the `rest-shell` uses the [spring-shell](http://github.com/springsource/spring-shell) underneath, there are limitations on the format of the JSON data you can enter directly into the command line. If your JSON is too complex for the simplistic limitations of the shell `--data` parameter, you can simply load the JSON from a file or from all the files in a directory.
+
+When doing a `post` or `put`, you can optionally pass the `--from` parameter. The value of this parameter should either be a file or a directory. If the value is a directory, the shell will read each file that ends with `.json` and make a POST or PUT with the contents of that file. If the parameter is a file, then the `rest-shell` will simpy load that file and POST/PUT that data in that individual file.
+
+### Shelling out to bash
+
+One of the nice things about spring-shell is that you can directly shell out commands to the underlying terminal shell. This is useful for doing things like load a JSON file in an editor. For instance, assume I have the Sublime Text 2 command `subl` in my path. I can then load a JSON file for editing from the rest-shell like this:
+
+
+			http://localhost:8080/person:> ! subl test.json
+			http://localhost:8080/person:>
+
+I then edit the file as I wish. When I'm ready to POST that data to the server, I can do so using the `--from` parameter:
+
+			http://localhost:8080/person:> post --from test.json
+			1 items POSTed to the server.
+			http://localhost:8080/person:>
+
 ### Commands
 
 The rest-shell provides the following commands:
