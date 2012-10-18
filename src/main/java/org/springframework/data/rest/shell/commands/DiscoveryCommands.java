@@ -221,7 +221,7 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
         if(LOG.isDebugEnabled()) {
           LOG.debug("No 'Accept' header specified, using " + COMPACT_JSON);
         }
-        request.getHeaders().setAccept(Arrays.asList(COMPACT_JSON));
+        request.getHeaders().setAccept(Arrays.asList(COMPACT_JSON, MediaType.APPLICATION_JSON));
       }
     }
 
