@@ -80,6 +80,10 @@ dependencies {
   // Jackson JSON
   compile "org.codehaus.jackson:jackson-mapper-asl:$jacksonVersion"
 
+  // TODO Add multipart upload support
+  // Commons
+  //compile "commons-fileupload:commons-fileupload:1.2.2"
+
   // Testing
   testCompile "junit:junit:$junitVersion"
   testCompile "org.hamcrest:hamcrest-library:1.3"

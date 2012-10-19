@@ -65,6 +65,8 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
   private ConfigurationCommands configCmds;
   @Autowired
   private DiscoveryCommands     discoveryCmds;
+  @Autowired
+  private ContextCommands       contextCmds;
   private ClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
   @Autowired(required = false)
   private RestTemplate             restTemplate   = new RestTemplate(requestFactory);
@@ -72,6 +74,8 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
   private ObjectMapper             mapper         = new ObjectMapper();
   private ApplicationEventPublisher             ctx;
   private HttpMessageConverterExtractor<String> extractor;
+  private Object                                lastResult;
+  private URI                                   requestUri;
 
   @Override public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
     this.ctx = applicationEventPublisher;
@@ -126,6 +130,11 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
       @CliOption(key = "output",
                  mandatory = false,
                  help = "The path to dump the output to.") String outputPath) {
+
+    if(null != path && path.startsWith("#")) {
+      path = contextCmds.getValue(path).toString();
+    }
+
     UriComponentsBuilder ucb = createUriComponentsBuilder(path);
     if(null != params) {
       for(Object key : params.keySet()) {
@@ -133,9 +142,9 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
         ucb.queryParam(key.toString(), encode(o.toString()));
       }
     }
-    URI requestUri = ucb.build().toUri();
+    requestUri = ucb.build().toUri();
 
-    return execute(requestUri, HttpMethod.GET, null, false, outputPath);
+    return execute(HttpMethod.GET, null, false, outputPath);
   }
 
   /**
@@ -167,9 +176,9 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
       @CliOption(key = "output",
                  mandatory = false,
                  help = "The path to dump the output to.") final String outputPath) throws IOException {
-    final URI requestUri = createUriComponentsBuilder(path).build().toUri();
+    requestUri = createUriComponentsBuilder(path).build().toUri();
     if(null != data) {
-      return execute(requestUri, HttpMethod.POST, data, followOnCreate, outputPath);
+      return execute(HttpMethod.POST, data, followOnCreate, outputPath);
     } else if(null != fromDir) {
       final AtomicInteger numItems = new AtomicInteger(0);
 
@@ -189,8 +198,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
                   throws IOException {
                 if(file.toString().endsWith("json")) {
                   byte[] jsonData = Files.readAllBytes(file);
-                  String response = execute(requestUri,
-                                            HttpMethod.POST,
+                  String response = execute(HttpMethod.POST,
                                             mapper.readValue(jsonData, Map.class),
                                             followOnCreate,
                                             outputPath);
@@ -205,8 +213,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
         );
       } else {
         byte[] jsonData = Files.readAllBytes(filePath);
-        String response = execute(requestUri,
-                                  HttpMethod.POST,
+        String response = execute(HttpMethod.POST,
                                   mapper.readValue(jsonData, Map.class),
                                   followOnCreate,
                                   outputPath);
@@ -218,7 +225,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
 
       return numItems.get() + " items POSTed to the server.";
     } else {
-      return execute(requestUri, HttpMethod.POST, new HashMap(0), followOnCreate, outputPath);
+      return execute(HttpMethod.POST, new HashMap(0), followOnCreate, outputPath);
     }
   }
 
@@ -243,8 +250,8 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
       @CliOption(key = "output",
                  mandatory = false,
                  help = "The path to dump the output to.") String outputPath) {
-    URI requestUri = createUriComponentsBuilder(path).build().toUri();
-    return execute(requestUri, HttpMethod.PUT, data, false, outputPath);
+    requestUri = createUriComponentsBuilder(path).build().toUri();
+    return execute(HttpMethod.PUT, data, false, outputPath);
   }
 
   /**
@@ -263,12 +270,11 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
       @CliOption(key = "output",
                  mandatory = false,
                  help = "The path to dump the output to.") String outputPath) {
-    URI requestUri = createUriComponentsBuilder(path).build().toUri();
-    return execute(requestUri, HttpMethod.DELETE, null, false, outputPath);
+    requestUri = createUriComponentsBuilder(path).build().toUri();
+    return execute(HttpMethod.DELETE, null, false, outputPath);
   }
 
-  public String execute(final URI requestUri,
-                        final HttpMethod method,
+  public String execute(final HttpMethod method,
                         final Map data,
                         final boolean followOnCreate,
                         final String outputPath) {
@@ -288,7 +294,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
           if(LOG.isWarnEnabled()) {
             LOG.warn("Client encountered an error " + response.getRawStatusCode() + ". Retrying...");
           }
-          System.out.println(execute(requestUri, method, data, followOnCreate, outputPath));
+          System.out.println(execute(method, data, followOnCreate, outputPath));
         }
       });
 
@@ -426,9 +432,18 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
       MediaType ct = response.getHeaders().getContentType();
       if(null != ct && ct.getSubtype().endsWith("json")) {
         // Pretty-print the JSON
-        Map m = mapper.readValue(body.getBytes(), Map.class);
+        if(body.startsWith("{")) {
+          lastResult = mapper.readValue(body.getBytes(), Map.class);
+        } else if(body.startsWith("[")) {
+          lastResult = mapper.readValue(body.getBytes(), List.class);
+        }
+
+        contextCmds.variables.put("path", requestUri.toString());
+        contextCmds.variables.put("headers", response.getHeaders());
+        contextCmds.variables.put("result", lastResult);
+
         StringWriter sw = new StringWriter();
-        mapper.writeValue(sw, m);
+        mapper.writeValue(sw, lastResult);
         body = sw.toString();
       }
 
