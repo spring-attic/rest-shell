@@ -138,6 +138,42 @@ I then edit the file as I wish. When I'm ready to POST that data to the server, 
 			1 items POSTed to the server.
 			http://localhost:8080/person:>
 
+### Setting context variables
+
+Starting with rest-shell version 1.1, you can also work with context variables during your shell session. This is useful for saving settings you might reference often. The rest-shell now integrates Spring Expression Language support, so these context variables are usable in expressions within the shell.
+
+##### Working with variables
+
+		http://localhost:8080/person:> var set --name specialUri --value http://longdomainname.com/api
+		http://localhost:8080/person:> var get --name specialUri
+		http://longdomainname.com/api
+		http://localhost:8080/person:> var list
+		{
+			"responseHeaders" : {
+				... HTTP headers from last request
+			},
+			"responseBody" : {
+				... Body from the last request
+			},
+			"specialUri" : "http://longdomainname.com/api",
+			"requestUrl" : ... URL from the last request,
+			"env" : {
+				... System properties and environment variables
+			}
+		}
+
+The variables are accessible from SpEL expressions which are valid in a number of different contexts, most importantly in the `path` argument to the HTTP and discover commands, and in the `data` argument to the `put` and `post` commands.
+
+Since the rest-shell is aware of environment variables and system properties, you can incorporate external parameters into your interaction with the shell. For example, to externally define a baseUri, you could set a system property before invoking the shell. The shell will incorporate anything defined in the `JAVA_OPTS` environment variable, so you could parameterize your interaction with a REST service.
+
+		JAVA_OPTS="-Drest.shell.root=http://mylongdomain.com/api" rest-shell
+
+		http://localhost:8080:> discover #{env["rest.shell.root"]}
+		rel                href
+		=================================================================
+		... resources for this URL
+		http://mylongdomain.com/api:>
+
 ### Commands
 
 The rest-shell provides the following commands:
@@ -151,7 +187,10 @@ The rest-shell provides the following commands:
 * `headers list` - Print out the currently-set HTTP headers for this session.
 * `history list` - List the URIs previously set as baseUris during this session.
 * `history go` - Jump to a URI by pulling one from the history.
-* `up` - Traverse one level up in the URL hierarchy.
+* `var clear` - Clear this shell's variable context
+* `var get` - Get a variable in this shell's context
+* `var list` - List variables currently set in this shell's context
+* `var set` - Set a variable in this shell's context* `up` - Traverse one level up in the URL hierarchy.
 * `get` - HTTP GET from the given path.
 * `post` - HTTP POST to the given path, passing JSON given in the `--data` parameter.
 * `put` - HTTP PUT to the given path, passing JSON given in the `--data` parameter.

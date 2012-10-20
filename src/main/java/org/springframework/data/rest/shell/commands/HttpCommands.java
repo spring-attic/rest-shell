@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 import org.slf4j.Logger;
@@ -61,6 +62,8 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
 
   private static final Logger LOG = LoggerFactory.getLogger(HttpCommands.class);
 
+  private static final String LOCATION_HEADER = "Location";
+
   @Autowired
   private ConfigurationCommands configCmds;
   @Autowired
@@ -72,17 +75,18 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
   private RestTemplate             restTemplate   = new RestTemplate(requestFactory);
   @Autowired(required = false)
   private ObjectMapper             mapper         = new ObjectMapper();
-  private ApplicationEventPublisher             ctx;
-  private HttpMessageConverterExtractor<String> extractor;
-  private Object                                lastResult;
-  private URI                                   requestUri;
+  private ApplicationEventPublisher ctx;
+  private Object                    lastResult;
+  private URI                       requestUri;
 
   @Override public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
     this.ctx = applicationEventPublisher;
   }
 
   @Override public void afterPropertiesSet() throws Exception {
-    extractor = new HttpMessageConverterExtractor<>(String.class, restTemplate.getMessageConverters());
+    mapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
+    mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
+
     restTemplate.setErrorHandler(new DefaultResponseErrorHandler() {
       @Override public void handleError(ClientHttpResponse response) throws IOException {
       }
@@ -131,8 +135,11 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
                  mandatory = false,
                  help = "The path to dump the output to.") String outputPath) {
 
-    if(null != path && path.startsWith("#")) {
-      path = contextCmds.getValue(path).toString();
+    if(null != path && path.contains("#{")) {
+      Object o = contextCmds.getValue(path);
+      if(null != o) {
+        path = o.toString();
+      }
     }
 
     UriComponentsBuilder ucb = createUriComponentsBuilder(path);
@@ -165,7 +172,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
                  unspecifiedDefaultValue = "") String path,
       @CliOption(key = "data",
                  mandatory = false,
-                 help = "The JSON data to use as the resource.") Map data,
+                 help = "The JSON data to use as the resource.") String data,
       @CliOption(key = "from",
                  mandatory = false,
                  help = "The directory from which to read JSON files to POST to the server.") String fromDir,
@@ -176,9 +183,23 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
       @CliOption(key = "output",
                  mandatory = false,
                  help = "The path to dump the output to.") final String outputPath) throws IOException {
+
+    if(null != path && path.contains("#{")) {
+      Object o = contextCmds.getValue(path);
+      if(null != o) {
+        path = o.toString();
+      }
+    }
+
     requestUri = createUriComponentsBuilder(path).build().toUri();
     if(null != data) {
-      return execute(HttpMethod.POST, data, followOnCreate, outputPath);
+      Object obj;
+      if(data.contains("#{")) {
+        obj = contextCmds.getValue(data);
+      } else {
+        obj = data.replaceAll("\\\\", "").replaceAll("'", "\"");
+      }
+      return execute(HttpMethod.POST, obj, followOnCreate, outputPath);
     } else if(null != fromDir) {
       final AtomicInteger numItems = new AtomicInteger(0);
 
@@ -246,12 +267,28 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
                  help = "The path to the resource.") String path,
       @CliOption(key = "data",
                  mandatory = true,
-                 help = "The JSON data to use as the resource.") Map data,
+                 help = "The JSON data to use as the resource.") String data,
       @CliOption(key = "output",
                  mandatory = false,
                  help = "The path to dump the output to.") String outputPath) {
+
+    if(null != path && path.contains("#{")) {
+      Object o = contextCmds.getValue(path);
+      if(null != o) {
+        path = o.toString();
+      }
+    }
+
     requestUri = createUriComponentsBuilder(path).build().toUri();
-    return execute(HttpMethod.PUT, data, false, outputPath);
+
+    Object obj;
+    if(null != data && data.contains("#{")) {
+      obj = contextCmds.getValue(data);
+    } else {
+      obj = data.replaceAll("\\\\", "").replaceAll("'", "\"");
+    }
+
+    return execute(HttpMethod.PUT, obj, false, outputPath);
   }
 
   /**
@@ -270,12 +307,21 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
       @CliOption(key = "output",
                  mandatory = false,
                  help = "The path to dump the output to.") String outputPath) {
+
+    if(null != path && path.contains("#{")) {
+      Object o = contextCmds.getValue(path);
+      if(null != o) {
+        path = o.toString();
+      }
+    }
+
     requestUri = createUriComponentsBuilder(path).build().toUri();
+
     return execute(HttpMethod.DELETE, null, false, outputPath);
   }
 
   public String execute(final HttpMethod method,
-                        final Map data,
+                        final Object data,
                         final boolean followOnCreate,
                         final String outputPath) {
     final StringBuilder buffer = new StringBuilder();
@@ -310,9 +356,9 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
       restTemplate.setErrorHandler(origErrHandler);
     }
 
-    if(followOnCreate && response.getStatusCode() == HttpStatus.CREATED) {
+    if(followOnCreate && response.getHeaders().containsKey(LOCATION_HEADER)) {
       try {
-        configCmds.setBaseUri(response.getHeaders().getFirst("Location"));
+        configCmds.setBaseUri(response.getHeaders().getFirst(LOCATION_HEADER));
       } catch(URISyntaxException e) {
         LOG.error("Error following Location header: " + e.getMessage(), e);
       }
@@ -398,7 +444,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
 
   private class RequestHelper implements RequestCallback, ResponseExtractor<ResponseEntity<String>> {
 
-    private Map       body;
+    private Object    body;
     private MediaType contentType;
     private HttpMessageConverterExtractor<String> extractor = new HttpMessageConverterExtractor<>(String.class,
                                                                                                   restTemplate.getMessageConverters());
@@ -411,7 +457,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
     private RequestHelper() {
     }
 
-    private RequestHelper(Map body, MediaType contentType) {
+    private RequestHelper(Object body, MediaType contentType) {
       this.body = body;
       this.contentType = contentType;
     }
@@ -438,9 +484,9 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
           lastResult = mapper.readValue(body.getBytes(), List.class);
         }
 
-        contextCmds.variables.put("path", requestUri.toString());
-        contextCmds.variables.put("headers", response.getHeaders());
-        contextCmds.variables.put("result", lastResult);
+        contextCmds.variables.put("requestUrl", requestUri.toString());
+        contextCmds.variables.put("responseHeaders", response.getHeaders());
+        contextCmds.variables.put("responseBody", lastResult);
 
         StringWriter sw = new StringWriter();
         mapper.writeValue(sw, lastResult);

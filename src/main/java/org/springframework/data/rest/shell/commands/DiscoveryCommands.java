@@ -47,6 +47,8 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
 
   @Autowired
   private ConfigurationCommands     configCmds;
+  @Autowired
+  private ContextCommands           contextCmds;
   private ApplicationEventPublisher ctx;
   @Autowired(required = false)
   private RestTemplate        client    = new RestTemplate();
@@ -88,6 +90,14 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
                  mandatory = false,
                  help = "The base URI to use for this session.",
                  unspecifiedDefaultValue = "/") String path) throws IOException, URISyntaxException {
+
+    if(null != path && path.contains("#{")) {
+      Object o = contextCmds.getValue(path);
+      if(null != o) {
+        path = o.toString();
+      }
+    }
+
     URI requestUri;
     if("/".equals(path)) {
       requestUri = configCmds.getBaseUri();
@@ -111,6 +121,14 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
       @CliOption(key = "params",
                  mandatory = false,
                  help = "Query parameters to add to the URL.") Map params) {
+
+    if(null != path && path.contains("#{")) {
+      Object o = contextCmds.getValue(path);
+      if(null != o) {
+        path = o.toString();
+      }
+    }
+
     URI requestUri;
     if("/".equals(path)) {
       requestUri = configCmds.getBaseUri();
@@ -200,6 +218,14 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
       @CliOption(key = "",
                  mandatory = true,
                  help = "The URI to follow.") String path) throws IOException, URISyntaxException {
+
+    if(null != path && path.contains("#{")) {
+      Object o = contextCmds.getValue(path);
+      if(null != o) {
+        path = o.toString();
+      }
+    }
+
     if(resources.containsKey(path)) {
       configCmds.setBaseUri(resources.get(path));
     } else {
