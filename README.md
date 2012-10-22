@@ -6,8 +6,8 @@ Download the binary .tar.gz package:
 
 [https://github.com/jbrisbin/rest-shell/downloads](https://github.com/jbrisbin/rest-shell/downloads)
 
-		tar -zxvf rest-shell-1.0.0.RELEASE.tar.gz
-		cd rest-shell-1.0.0.RELEASE
+		tar -zxvf rest-shell-1.1.2.RELEASE.tar.gz
+		cd rest-shell-1.1.2.RELEASE
 		bin/rest-shell
 
 # Building and Running
@@ -65,11 +65,13 @@ The rest-shell is aimed at making it easier to interact with REST resources by m
 			"name" : "John Doe"
 		}
 
+_NOTE: If you want tab completion of discovered rels, just use the `--rel` flag._
+
 ### Creating new resources
 
 The rest-shell can do basic parsing of JSON data within the shell (though there are some limitations due to the nature of the command line parsing being sensitive to whitespace). This makes it easy to create new resources by including JSON data directly in the shell:
 
-		http://localhost:8080/person:> post --data "{name:"John Doe"}"
+		http://localhost:8080/person:> post --data "{name: 'John Doe'}"
 		> POST http://localhost:8080/person/
 
 		< 201 CREATED
@@ -101,20 +103,26 @@ The rest-shell can do basic parsing of JSON data within the shell (though there 
 If your needs of representing JSON get more complicated than what the spring-shell interface can handle, you can create a directory somewhere with `.json` files in it, one file per entitiy, and use the `--from` option to the `post` command. This will walk the directory and make a `POST` request for each `.json` file found.
 
 	http://localhost:8080/person:> post --from work/people_to_load
-	128 items POSTed to the server.
+	128 items uploaded to the server using POST.
+	http://localhost:8080/person:>
+
+You can also reference a specific file rather than an entire directory.
+
+	http://localhost:8080/person:> post --from work/people_to_load/someone.json
+	1 items uploaded to the server using POST.
 	http://localhost:8080/person:>
 
 ### Passing query parameters
 
 If you're calling URLs that require query parameters, you'll need to pass those as a JSON-like fragment in the `--params` parameter to the `get` and `list` commands. Here's an example of calling a URL that expects parameter input:
 
-		http://localhost:8080/person:> get search/byName --params "{name:"John Doe"}"
+		http://localhost:8080/person:> get search/byName --params "{name: 'John Doe'}"
 
 ### Outputing results to a file
 
 It's not always desirable to output the results of an HTTP request to the screen. It's handy for debugging but sometimes you want to save the results of a request because they're not easily reproducible or any number of other equally valid reasons. All the HTTP commands take an `--output` parameter that writes the results of an HTTP operation to the given file. For example, to output the above search to a file:
 
-		http://localhost:8080/person:> get search/byName --params "{name:"John Doe"}" --output by_name.txt
+		http://localhost:8080/person:> get search/byName --params "{name: 'John Doe'}" --output by_name.txt
 		>> by_name.txt
 		http://localhost:8080/person:>
 
@@ -128,15 +136,14 @@ When doing a `post` or `put`, you can optionally pass the `--from` parameter. Th
 
 One of the nice things about spring-shell is that you can directly shell out commands to the underlying terminal shell. This is useful for doing things like load a JSON file in an editor. For instance, assume I have the Sublime Text 2 command `subl` in my path. I can then load a JSON file for editing from the rest-shell like this:
 
-
-			http://localhost:8080/person:> ! subl test.json
-			http://localhost:8080/person:>
+		http://localhost:8080/person:> ! subl test.json
+		http://localhost:8080/person:>
 
 I then edit the file as I wish. When I'm ready to POST that data to the server, I can do so using the `--from` parameter:
 
-			http://localhost:8080/person:> post --from test.json
-			1 items POSTed to the server.
-			http://localhost:8080/person:>
+		http://localhost:8080/person:> post --from test.json
+		1 items uploaded to the server using POST.
+		http://localhost:8080/person:>
 
 ### Setting context variables
 
@@ -166,9 +173,9 @@ The variables are accessible from SpEL expressions which are valid in a number o
 
 Since the rest-shell is aware of environment variables and system properties, you can incorporate external parameters into your interaction with the shell. For example, to externally define a baseUri, you could set a system property before invoking the shell. The shell will incorporate anything defined in the `JAVA_OPTS` environment variable, so you could parameterize your interaction with a REST service.
 
-		JAVA_OPTS="-Drest.shell.root=http://mylongdomain.com/api" rest-shell
+		JAVA_OPTS="-DbaseUri=http://mylongdomain.com/api" rest-shell
 
-		http://localhost:8080:> discover #{env["rest.shell.root"]}
+		http://localhost:8080:> discover #{env.baseUri}
 		rel                href
 		=================================================================
 		... resources for this URL
