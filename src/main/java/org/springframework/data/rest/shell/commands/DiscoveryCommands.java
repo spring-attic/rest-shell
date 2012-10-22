@@ -86,66 +86,52 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
    */
   @CliCommand(value = "discover", help = "Discover the resources available at a given URI.")
   public String discover(
-      @CliOption(key = "",
+      @CliOption(key = {"", "rel"},
                  mandatory = false,
                  help = "The base URI to use for this session.",
-                 unspecifiedDefaultValue = "/") String path) throws IOException, URISyntaxException {
-
-    if(null != path && path.contains("#{")) {
-      Object o = contextCmds.getValue(path);
-      if(null != o) {
-        path = o.toString();
-      }
-    }
+                 unspecifiedDefaultValue = "/") PathOrRel path) throws IOException, URISyntaxException {
 
     URI requestUri;
     if("/".equals(path)) {
       requestUri = configCmds.getBaseUri();
-    } else if(path.startsWith("http")) {
-      requestUri = URI.create(path);
+    } else if(path.getPath().startsWith("http")) {
+      requestUri = URI.create(path.getPath());
     } else {
-      requestUri = UriComponentsBuilder.fromUri(configCmds.getBaseUri()).path(path).build().toUri();
+      requestUri = UriComponentsBuilder.fromUri(configCmds.getBaseUri()).path(path.getPath()).build().toUri();
     }
 
     configCmds.setBaseUri(requestUri.toString());
 
-    return list(requestUri.toString(), null);
+    return list(new PathOrRel(requestUri.toString()), null);
   }
 
   @CliCommand(value = "list", help = "Discover the resources available at a given URI.")
   public String list(
-      @CliOption(key = "",
+      @CliOption(key = {"", "rel"},
                  mandatory = false,
                  help = "The URI at which to discover resources.",
-                 unspecifiedDefaultValue = "/") String path,
+                 unspecifiedDefaultValue = "/") PathOrRel path,
       @CliOption(key = "params",
                  mandatory = false,
                  help = "Query parameters to add to the URL.") Map params) {
 
-    if(null != path && path.contains("#{")) {
-      Object o = contextCmds.getValue(path);
-      if(null != o) {
-        path = o.toString();
-      }
-    }
-
     URI requestUri;
     if("/".equals(path)) {
       requestUri = configCmds.getBaseUri();
-    } else if(path.startsWith("http")) {
-      requestUri = URI.create(path);
+    } else if(path.getPath().startsWith("http")) {
+      requestUri = URI.create(path.getPath());
     } else if(resources.containsKey(path)) {
       requestUri = UriComponentsBuilder.fromUriString(resources.get(path))
                                        .build()
                                        .toUri();
     } else if("/".equals(configCmds.getBaseUri().getPath())) {
       requestUri = UriComponentsBuilder.fromUri(configCmds.getBaseUri())
-                                       .path(path)
+                                       .path(path.getPath())
                                        .build()
                                        .toUri();
     } else {
       requestUri = UriComponentsBuilder.fromUri(configCmds.getBaseUri())
-                                       .pathSegment(path)
+                                       .pathSegment(path.getPath())
                                        .build()
                                        .toUri();
     }
@@ -215,22 +201,10 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
   @CliCommand(value = "follow",
               help = "Follows a URI path, sets the base to that new path, and discovers what resources are available.")
   public void follow(
-      @CliOption(key = "",
+      @CliOption(key = {"", "rel"},
                  mandatory = true,
-                 help = "The URI to follow.") String path) throws IOException, URISyntaxException {
-
-    if(null != path && path.contains("#{")) {
-      Object o = contextCmds.getValue(path);
-      if(null != o) {
-        path = o.toString();
-      }
-    }
-
-    if(resources.containsKey(path)) {
-      configCmds.setBaseUri(resources.get(path));
-    } else {
-      configCmds.setBaseUri(path);
-    }
+                 help = "The URI to follow.") PathOrRel path) throws IOException, URISyntaxException {
+    configCmds.setBaseUri(path.getPath());
   }
 
   private static String pad(String s, int len) {

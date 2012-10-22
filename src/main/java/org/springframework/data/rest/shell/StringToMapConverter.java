@@ -32,7 +32,7 @@ public class StringToMapConverter implements Converter<Map> {
                                        Class<?> targetType,
                                        String optionContext) {
     try {
-      return (Map)mapper.readValue(value, targetType);
+      return (Map)mapper.readValue(value.replaceAll("\\\\", "").replaceAll("'", "\""), targetType);
     } catch(IOException e) {
       throw new IllegalArgumentException(e);
     }

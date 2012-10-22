@@ -9,6 +9,8 @@ import java.util.Map;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.expression.BeanFactoryResolver;
@@ -38,6 +40,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class ContextCommands implements CommandMarker, InitializingBean {
 
+  private static final Logger LOG = LoggerFactory.getLogger(ContextCommands.class);
+
   private static final PropertyAccessor LINK_ACCESSOR = new LinkPropertyAccessor();
   private static final PropertyAccessor MAP_ACCESOR   = new MapAccessor();
   private static final PropertyAccessor ENV_ACCESSOR  = new EnvironmentAccessor();
@@ -45,10 +49,11 @@ public class ContextCommands implements CommandMarker, InitializingBean {
 
   final Map<String, Object> variables = new HashMap<>();
 
-  private final SpelExpressionParser parser              = new SpelExpressionParser();
-  private final ParserContext        parserContext       = new TemplateParserContext();
-  private final ObjectMapper         mapper              = new ObjectMapper();
-  private       BeanResolver         beanFactoryResolver = null;
+  private final SpelExpressionParser parser        = new SpelExpressionParser();
+  private final ParserContext        parserContext = new TemplateParserContext();
+  private StandardEvaluationContext evalCtx;
+  private final ObjectMapper mapper              = new ObjectMapper();
+  private       BeanResolver beanFactoryResolver = null;
 
   private ApplicationContext userAppCtx;
 
@@ -62,6 +67,7 @@ public class ContextCommands implements CommandMarker, InitializingBean {
   @Override public void afterPropertiesSet() throws Exception {
     userAppCtx = new ClassPathXmlApplicationContext("classpath*:META-INF/rest-shell/**/*.xml");
     beanFactoryResolver = new BeanFactoryResolver(userAppCtx);
+    clear();
   }
 
   @CliAvailabilityIndicator({"var clear", "var set", "var get", "var list"})
@@ -73,6 +79,10 @@ public class ContextCommands implements CommandMarker, InitializingBean {
   public void clear() {
     variables.clear();
     variables.put("env", ENV);
+    setup();
+    if(LOG.isDebugEnabled()) {
+      LOG.debug("Cleared context variables...");
+    }
   }
 
   @CliCommand(value = "var set", help = "Set a variable in this shell's context")
@@ -92,17 +102,17 @@ public class ContextCommands implements CommandMarker, InitializingBean {
     }
 
     if(value.contains("#{")) {
-      Object val = getValue(value);
+      Object val = eval(value);
       variables.put(name, val);
     } else if(value.startsWith("{")) {
       try {
-        variables.put(name, mapper.readValue(value.replaceAll("\\\\", ""), Map.class));
+        variables.put(name, mapper.readValue(value.replaceAll("\\\\", "").replaceAll("'", "\""), Map.class));
       } catch(IOException e) {
         throw new IllegalArgumentException(e);
       }
     } else if(value.startsWith("[")) {
       try {
-        variables.put(name, mapper.readValue(value.replaceAll("\\\\", ""), List.class));
+        variables.put(name, mapper.readValue(value.replaceAll("\\\\", "").replaceAll("'", "\""), List.class));
       } catch(IOException e) {
         throw new IllegalArgumentException(e);
       }
@@ -112,6 +122,9 @@ public class ContextCommands implements CommandMarker, InitializingBean {
       variables.put(name, value);
     }
 
+    if(LOG.isDebugEnabled()) {
+      LOG.debug("Set context variable '" + name + "' to " + variables.get(name));
+    }
   }
 
   @CliCommand(value = "var get", help = "Get a variable in this shell's context")
@@ -131,10 +144,10 @@ public class ContextCommands implements CommandMarker, InitializingBean {
       } else if(userAppCtx.containsBean(name)) {
         return userAppCtx.getBean(name);
       }
-    } else {
-      if(null != value && value.contains("#{")) {
-        return getValue(value);
-      }
+    }
+
+    if(null != value && value.contains("#{")) {
+      return eval(value);
     }
 
     return null;
@@ -143,14 +156,33 @@ public class ContextCommands implements CommandMarker, InitializingBean {
   @CliCommand(value = "var list", help = "List variables currently set in this shell's context")
   public String list() {
     try {
+      // Don't serialize the "env" to display
+      variables.remove("env");
       return mapper.writeValueAsString(variables);
     } catch(IOException e) {
       throw new IllegalStateException(e);
+    } finally {
+      variables.put("env", ENV);
     }
   }
 
-  public Object getValue(String expr) {
-    StandardEvaluationContext evalCtx = new StandardEvaluationContext(variables);
+  public Object eval(String expr) {
+    if(null == expr || !expr.contains("#{")) {
+      return expr;
+    }
+    return parser.parseExpression(expr, parserContext).getValue(evalCtx);
+  }
+
+  public String evalAsString(String expr) {
+    Object o = eval(expr);
+    if(null != o) {
+      return o.toString();
+    }
+    return null;
+  }
+
+  private void setup() {
+    evalCtx = new StandardEvaluationContext(variables);
     evalCtx.setPropertyAccessors(Arrays.<PropertyAccessor>asList(
         LINK_ACCESSOR,
         ENV_ACCESSOR,
@@ -158,8 +190,6 @@ public class ContextCommands implements CommandMarker, InitializingBean {
     ));
     evalCtx.setBeanResolver(beanFactoryResolver);
     evalCtx.setVariable("env", ENV);
-
-    return parser.parseExpression(expr, parserContext).getValue(evalCtx);
   }
 
   private static class LinkPropertyAccessor implements PropertyAccessor {
