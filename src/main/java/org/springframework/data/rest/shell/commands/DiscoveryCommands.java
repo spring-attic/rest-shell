@@ -70,7 +70,7 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
   }
 
   @CliAvailabilityIndicator({"discover", "list", "follow"})
-  public boolean isDiscoverAvailable() {
+  public boolean available() {
     return true;
   }
 

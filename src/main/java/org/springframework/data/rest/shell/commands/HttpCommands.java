@@ -28,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.data.rest.shell.context.ResponseEvent;
+import org.springframework.hateoas.Link;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -523,6 +524,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
       }
     }
 
+    @SuppressWarnings({"unchecked"})
     @Override public ResponseEntity<String> extractData(ClientHttpResponse response) throws IOException {
       String body = extractor.extractData(response);
 
@@ -538,6 +540,21 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
         contextCmds.variables.put("requestUrl", requestUri.toString());
         contextCmds.variables.put("responseHeaders", response.getHeaders());
         contextCmds.variables.put("responseBody", lastResult);
+
+        if(lastResult instanceof Map && ((Map)lastResult).containsKey("links")) {
+          Links linksobj;
+          if(contextCmds.variables.containsKey("links")) {
+            linksobj = (Links)contextCmds.variables.get("links");
+          } else {
+            linksobj = new Links();
+            contextCmds.evalCtx.addPropertyAccessor(linksobj.getPropertyAccessor());
+          }
+          linksobj.getLinks().clear();
+          for(Map<String, String> linkmap : (List<Map<String, String>>)((Map)lastResult).get("links")) {
+            linksobj.addLink(new Link(linkmap.get("href"), linkmap.get("rel")));
+          }
+          contextCmds.variables.put("links", linksobj);
+        }
 
         StringWriter sw = new StringWriter();
         mapper.writeValue(sw, lastResult);
