@@ -488,7 +488,8 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
     }
   }
 
-  private class RequestHelper implements RequestCallback, ResponseExtractor<ResponseEntity<String>> {
+  private class RequestHelper implements RequestCallback,
+                                         ResponseExtractor<ResponseEntity<String>> {
 
     private Object    body;
     private MediaType contentType;
@@ -527,6 +528,9 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
     @SuppressWarnings({"unchecked"})
     @Override public ResponseEntity<String> extractData(ClientHttpResponse response) throws IOException {
       String body = extractor.extractData(response);
+      contextCmds.variables.put("requestUrl", requestUri.toString());
+      contextCmds.variables.put("responseHeaders", response.getHeaders());
+      contextCmds.variables.put("responseBody", null);
 
       MediaType ct = response.getHeaders().getContentType();
       if(null != ct && ct.getSubtype().endsWith("json")) {
@@ -535,10 +539,10 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
           lastResult = mapper.readValue(body.getBytes(), Map.class);
         } else if(body.startsWith("[")) {
           lastResult = mapper.readValue(body.getBytes(), List.class);
+        } else {
+          lastResult = new String(body.getBytes());
         }
 
-        contextCmds.variables.put("requestUrl", requestUri.toString());
-        contextCmds.variables.put("responseHeaders", response.getHeaders());
         contextCmds.variables.put("responseBody", lastResult);
 
         if(lastResult instanceof Map && ((Map)lastResult).containsKey("links")) {
