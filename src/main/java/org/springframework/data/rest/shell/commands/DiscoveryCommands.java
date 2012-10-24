@@ -54,7 +54,7 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
   private RestTemplate        client    = new RestTemplate();
   @Autowired(required = false)
   private ObjectMapper        mapper    = new ObjectMapper();
-  private Map<String, String> resources = new HashMap<>();
+  private Map<String, String> resources = new HashMap<String, String>();
 
   @Override public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
     this.ctx = applicationEventPublisher;
@@ -226,7 +226,7 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
     }
 
     @Override public List<Link> extractData(ClientHttpResponse response) throws IOException {
-      List<Link> links = new ArrayList<>();
+      List<Link> links = new ArrayList<Link>();
 
       MediaType ct = response.getHeaders().getContentType();
       if(null != ct && ct.getSubtype().endsWith("json")) {
