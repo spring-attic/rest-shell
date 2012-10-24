@@ -17,7 +17,7 @@ import org.springframework.hateoas.Link;
 public class Links {
 
   private final PropertyAccessor propertyAccessor = new Accessor();
-  private final List<Link>       links            = new ArrayList<>();
+  private final List<Link>       links            = new ArrayList<Link>();
 
   public Links() {
   }

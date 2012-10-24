@@ -25,13 +25,8 @@ public class HierarchyCommands implements CommandMarker {
 
   @CliAvailabilityIndicator({"up"})
   public boolean isHierarchyAvailable() {
-    switch(configCmds.getBaseUri().getPath()) {
-      case "":
-      case "/":
-        return false;
-      default:
-        return true;
-    }
+    String path = configCmds.getBaseUri().getPath();
+    return !("".equals(path) || "/".equals(path));
   }
 
   /**
@@ -46,15 +41,10 @@ public class HierarchyCommands implements CommandMarker {
 
     URI baseUri = configCmds.getBaseUri();
     String path = baseUri.getPath();
-    switch(path) {
-      case "":
-      case "/":
-        return;
-      default: {
-        int idx = path.lastIndexOf("/");
-        String newPath = path.substring(0, idx);
-        configCmds.setBaseUri(UriComponentsBuilder.fromUri(baseUri).replacePath(newPath).build().toUriString());
-      }
+    if (!("".equals(path) || "/".equals(path))) {
+      int idx = path.lastIndexOf("/");
+      String newPath = path.substring(0, idx);
+      configCmds.setBaseUri(UriComponentsBuilder.fromUri(baseUri).replacePath(newPath).build().toUriString());
     }
   }
 

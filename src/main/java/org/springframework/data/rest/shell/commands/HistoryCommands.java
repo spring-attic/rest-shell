@@ -25,7 +25,7 @@ public class HistoryCommands implements CommandMarker, ApplicationListener<BaseU
 
   @Autowired
   private ConfigurationCommands configCmds;
-  private List<URI> baseUris = new ArrayList<>();
+  private List<URI> baseUris = new ArrayList<URI>();
 
   @Override public void onApplicationEvent(BaseUriChangedEvent event) {
     baseUris.add(event.getBaseUri());
