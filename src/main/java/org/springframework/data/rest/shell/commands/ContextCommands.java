@@ -44,7 +44,7 @@ public class ContextCommands implements CommandMarker, InitializingBean {
   private static final PropertyAccessor ENV_ACCESSOR = new EnvironmentAccessor();
   private static final Environment      ENV          = new StandardEnvironment();
 
-  final Map<String, Object> variables = new HashMap<>();
+  final Map<String, Object> variables = new HashMap<String, Object>();
   StandardEvaluationContext evalCtx;
 
   private final SpelExpressionParser parser              = new SpelExpressionParser();
@@ -179,7 +179,7 @@ public class ContextCommands implements CommandMarker, InitializingBean {
 
   private void setup() {
     evalCtx = new StandardEvaluationContext(variables);
-    List<PropertyAccessor> accessors = new ArrayList<>();
+    List<PropertyAccessor> accessors = new ArrayList<PropertyAccessor>();
     accessors.add(MAP_ACCESOR);
     accessors.add(BEAN_ACCESOR);
     accessors.add(ENV_ACCESSOR);

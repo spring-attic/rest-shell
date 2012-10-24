@@ -493,8 +493,8 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
 
     private Object    body;
     private MediaType contentType;
-    private HttpMessageConverterExtractor<String> extractor = new HttpMessageConverterExtractor<>(String.class,
-                                                                                                  restTemplate.getMessageConverters());
+    private HttpMessageConverterExtractor<String> extractor = new HttpMessageConverterExtractor<String>(String.class,
+                                                                                                        restTemplate.getMessageConverters());
     private ObjectMapper                          mapper    = new ObjectMapper();
 
     {
@@ -565,7 +565,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
         body = sw.toString();
       }
 
-      return new ResponseEntity<>(body, response.getHeaders(), response.getStatusCode());
+      return new ResponseEntity<String>(body, response.getHeaders(), response.getStatusCode());
     }
   }
 

@@ -29,8 +29,8 @@ configurations {
   compile.extendsFrom providedCompile
 }
 [compileJava, compileTestJava]*.options*.compilerArgs = ["-Xlint:unchecked"]
-project.sourceCompatibility = 1.7
-project.targetCompatibility = 1.7
+project.sourceCompatibility = 1.6
+project.targetCompatibility = 1.6
 
 // Repositories
 repositories {
