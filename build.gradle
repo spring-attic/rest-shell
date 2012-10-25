@@ -17,6 +17,10 @@ ext {
   junitVersion = "4.10"
 }
 
+installApp {
+  into "build/install/rest-shell-$version"
+}
+
 group = "org.springframework.data.rest.shell"
 mainClassName = "org.springframework.shell.Bootstrap"
 
@@ -92,7 +96,7 @@ dependencies {
 }
 
 // Gradle Wrapper
-task wrapper(type: Wrapper) { gradleVersion = "1.1" }
+task wrapper(type: Wrapper) { gradleVersion = "1.2" }
 
 task shell(type: JavaExec) {
   classpath = configurations.runtime
@@ -106,8 +110,7 @@ idea {
     downloadSources = true
   }
   project {
-    jdkName = "OpenJDK 1.7"
-    languageLevel = "1.7"
+    languageLevel = "1.6"
     ipr {
       withXml { xml ->
         xml.node.component.find { it.@name == "VcsDirectoryMappings" }.mapping.@vcs = "Git"

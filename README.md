@@ -2,20 +2,24 @@
 
 # Installing the binaries
 
+Using Homebrew:
+
+		brew install rest-shell
+
 Download the binary .tar.gz package:
 
-[https://github.com/jbrisbin/rest-shell/downloads](https://github.com/jbrisbin/rest-shell/downloads)
+[https://github.com/SpringSource/rest-shell/downloads](https://github.com/SpringSource/rest-shell/downloads)
 
-		tar -zxvf rest-shell-1.1.2.RELEASE.tar.gz
-		cd rest-shell-1.1.2.RELEASE
+		tar -zxvf rest-shell-1.1.4.RELEASE.tar.gz
+		cd rest-shell-1.1.4.RELEASE
 		bin/rest-shell
 
 # Building and Running
 
-		git clone git://github.com/jbrisbin/rest-shell.git
+		git clone git://github.com/SpringSource/rest-shell.git
 		cd rest-shell
 		./gradlew installApp
-		cd build/install/rest-shell
+		cd build/install/rest-shell-1.1.4.RELEASE
 		bin/rest-shell
 
 # Getting Started
