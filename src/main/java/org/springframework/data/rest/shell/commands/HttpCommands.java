@@ -1,19 +1,15 @@
 package org.springframework.data.rest.shell.commands;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
-import java.nio.file.FileVisitOption;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -342,11 +338,21 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
     outputResponse(response, buffer);
 
     if(null != outputPath) {
+      FileWriter writer = null;
       try {
-        Files.write(Paths.get(outputPath), buffer.toString().getBytes());
+        writer = new FileWriter(new File(outputPath));
+        writer.write(buffer.toString());
+        writer.flush();
       } catch(IOException e) {
         LOG.error(e.getMessage(), e);
         throw new IllegalArgumentException(e);
+      } finally {
+        if(null != writer) {
+          try {
+            writer.close();
+          } catch(IOException e) {
+          }
+        }
       }
       return ">> " + outputPath;
     } else {
@@ -355,46 +361,36 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
   }
 
   private String readFileOrFiles(final HttpMethod method,
-                                 final String fromDir,
+                                 final String fromPath,
                                  final boolean follow,
                                  final String outputPath) throws IOException {
     final AtomicInteger numItems = new AtomicInteger(0);
 
-    Path filePath = Paths.get(fromDir);
-
-    if(!Files.exists(filePath)) {
-      throw new IllegalArgumentException("Path " + fromDir + " not found.");
+    File fromFile = new File(fromPath);
+    if(!fromFile.exists()) {
+      throw new IllegalArgumentException("Path " + fromPath + " not found.");
     }
 
-    if(Files.isDirectory(filePath)) {
-      Files.walkFileTree(
-          filePath,
-          EnumSet.of(FileVisitOption.FOLLOW_LINKS),
-          Integer.MAX_VALUE,
-          new SimpleFileVisitor<Path>() {
-            @Override public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                throws IOException {
-              if(!file.toString().endsWith("json")) {
-                return FileVisitResult.CONTINUE;
-              }
+    if(fromFile.isDirectory()) {
+      FilenameFilter jsonFilter = new FilenameFilter() {
+        @Override public boolean accept(File file, String s) {
+          return s.endsWith(".json");
+        }
+      };
+      for(File file : fromFile.listFiles(jsonFilter)) {
+        Object body = readFile(file);
+        String response = execute(method,
+                                  body,
+                                  follow,
+                                  outputPath);
+        if(LOG.isDebugEnabled()) {
+          LOG.debug(response);
+        }
 
-              Object body = readFile(file);
-              String response = execute(method,
-                                        body,
-                                        follow,
-                                        outputPath);
-              if(LOG.isDebugEnabled()) {
-                LOG.debug(response);
-              }
-
-              numItems.incrementAndGet();
-
-              return FileVisitResult.CONTINUE;
-            }
-          }
-      );
+        numItems.incrementAndGet();
+      }
     } else {
-      Object body = readFile(filePath);
+      Object body = readFile(fromFile);
       String response = execute(HttpMethod.POST,
                                 body,
                                 follow,
@@ -408,16 +404,25 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
     return numItems.get() + " files uploaded to the server using " + method;
   }
 
-  private Object readFile(Path file) throws IOException {
-    byte[] jsonData = Files.readAllBytes(file);
+  private Object readFile(File file) throws IOException {
+    StringBuilder builder = new StringBuilder();
+    FileReader reader = new FileReader(file);
+    char[] buffer = new char[8 * 1024];
+    int read;
+    while(-1 < (read = reader.read(buffer))) {
+      String s = new String(buffer, 0, read);
+      builder.append(s);
+    }
+
+    String bodyAsString = builder.toString();
     Object body = "";
-    if(jsonData.length > 0) {
-      if(jsonData[0] == '{') {
-        body = mapper.readValue(jsonData, Map.class);
-      } else if(jsonData[0] == '[') {
-        body = mapper.readValue(jsonData, List.class);
+    if(bodyAsString.length() > 0) {
+      if(bodyAsString.charAt(0) == '{') {
+        body = mapper.readValue(bodyAsString, Map.class);
+      } else if(bodyAsString.charAt(0) == '[') {
+        body = mapper.readValue(bodyAsString, List.class);
       } else {
-        body = jsonData;
+        body = bodyAsString;
       }
     }
     return body;
