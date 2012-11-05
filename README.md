@@ -206,3 +206,5 @@ The rest-shell provides the following commands:
 * `post` - HTTP POST to the given path, passing JSON given in the `--data` parameter.
 * `put` - HTTP PUT to the given path, passing JSON given in the `--data` parameter.
 * `delete` - HTTP DELETE to the given path.
+* `auth basic` - Set an HTTP Basic authentication token for use in this session.
+* `ssl validate` - Disable certificate checking to work with self-signed certificates.
