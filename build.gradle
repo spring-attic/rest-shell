@@ -32,7 +32,7 @@ configurations.all {
 configurations {
   compile.extendsFrom providedCompile
 }
-[compileJava, compileTestJava]*.options*.compilerArgs = ["-Xlint:unchecked"]
+[compileJava, compileTestJava]*.options*.compilerArgs = ["-Xlint:all"]
 project.sourceCompatibility = 1.6
 project.targetCompatibility = 1.6
 
@@ -84,8 +84,9 @@ dependencies {
   // Jackson JSON
   compile "org.codehaus.jackson:jackson-mapper-asl:$jacksonVersion"
 
-  // TODO Add multipart upload support
   // Commons
+  compile "commons-codec:commons-codec:1.7"
+  // TODO Add multipart upload support
   //compile "commons-fileupload:commons-fileupload:1.2.2"
 
   // Testing
