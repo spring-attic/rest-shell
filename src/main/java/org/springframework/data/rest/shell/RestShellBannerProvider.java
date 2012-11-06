@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 @Order(Integer.MIN_VALUE)
 public class RestShellBannerProvider implements BannerProvider {
 
-  private static final String VERSION = "1.0.0.BUILD-SNAPSHOT";
+  private static final String VERSION = "1.1.5.BUILD-SNAPSHOT";
   private static final String BANNER  = "\n ___ ___  __ _____  __  _  _     _ _  __    \n" +
       "| _ \\ __/' _/_   _/' _/| || |   / / | \\ \\   \n" +
       "| v / _|`._`. | | `._`.| >< |  / / /   > >  \n" +
@@ -21,7 +21,7 @@ public class RestShellBannerProvider implements BannerProvider {
   private static final String WELCOME = "Welcome to the REST shell. For assistance hit TAB or type \"help\".";
 
   @Override public String getBanner() {
-    return BANNER;
+    return BANNER + getVersion() + "\n";
   }
 
   @Override public String getVersion() {
@@ -33,7 +33,7 @@ public class RestShellBannerProvider implements BannerProvider {
   }
 
   @Override public String name() {
-    return "restsh";
+    return "rest-shell";
   }
 
 }
