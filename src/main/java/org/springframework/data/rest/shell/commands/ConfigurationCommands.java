@@ -6,6 +6,7 @@ import java.net.URISyntaxException;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.data.rest.shell.context.BaseUriChangedEvent;
@@ -26,6 +27,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Component
 public class ConfigurationCommands implements CommandMarker, ApplicationEventPublisherAware {
 
+  @Autowired
+  private ContextCommands contextCmds;
   private URI                       baseUri = URI.create("http://localhost:8080");
   private ApplicationEventPublisher ctx     = null;
   private HttpHeaders               headers = new HttpHeaders();
@@ -78,6 +81,9 @@ public class ConfigurationCommands implements CommandMarker, ApplicationEventPub
                  mandatory = true,
                  help = "The base URI to use from this point forward.",
                  unspecifiedDefaultValue = "http://localhost:8080") String baseUri) throws URISyntaxException {
+    if(baseUri.contains("#{")) {
+      baseUri = contextCmds.evalAsString(baseUri);
+    }
     if(baseUri.endsWith("/")) {
       baseUri = baseUri.substring(0, baseUri.length() - 1);
     }
@@ -134,6 +140,9 @@ public class ConfigurationCommands implements CommandMarker, ApplicationEventPub
       @CliOption(key = "value",
                  mandatory = true,
                  help = "The value of the HTTP header.") String value) throws IOException {
+    if(value.contains("#{")) {
+      value = contextCmds.evalAsString(value);
+    }
     headers.set(name, value);
     ctx.publishEvent(new HeaderSetEvent(name, headers));
     return mapper.writeValueAsString(headers.toSingleValueMap());
