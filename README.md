@@ -232,7 +232,8 @@ The rest-shell provides the following commands:
 * `var clear` - Clear this shell's variable context
 * `var get` - Get a variable in this shell's context
 * `var list` - List variables currently set in this shell's context
-* `var set` - Set a variable in this shell's context* `up` - Traverse one level up in the URL hierarchy.
+* `var set` - Set a variable in this shell's context
+* `up` - Traverse one level up in the URL hierarchy.
 * `get` - HTTP GET from the given path.
 * `post` - HTTP POST to the given path, passing JSON given in the `--data` parameter.
 * `put` - HTTP PUT to the given path, passing JSON given in the `--data` parameter.
