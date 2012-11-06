@@ -3,6 +3,7 @@ package org.springframework.data.rest.shell.commands;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -10,6 +11,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSession;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.Logger;
@@ -22,6 +26,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.ClientHttpRequest;
 import org.springframework.http.client.ClientHttpResponse;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.shell.core.CommandMarker;
 import org.springframework.shell.core.annotation.CliAvailabilityIndicator;
 import org.springframework.shell.core.annotation.CliCommand;
@@ -46,15 +51,18 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
   private static final Logger    LOG          = LoggerFactory.getLogger(DiscoveryCommands.class);
 
   @Autowired
-  private ConfigurationCommands     configCmds;
+  private ConfigurationCommands configCmds;
   @Autowired
-  private ContextCommands           contextCmds;
+  private ContextCommands       contextCmds;
+  @Autowired
+  private SslCommands           sslCmds;
+  private SslAwareClientHttpRequestFactory requestFactory = new SslAwareClientHttpRequestFactory();
+  @Autowired(required = false)
+  private RestTemplate                     client         = new RestTemplate(requestFactory);
+  @Autowired(required = false)
+  private ObjectMapper                     mapper         = new ObjectMapper();
+  private Map<String, String>              resources      = new HashMap<String, String>();
   private ApplicationEventPublisher ctx;
-  @Autowired(required = false)
-  private RestTemplate        client    = new RestTemplate();
-  @Autowired(required = false)
-  private ObjectMapper        mapper    = new ObjectMapper();
-  private Map<String, String> resources = new HashMap<String, String>();
 
   @Override public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
     this.ctx = applicationEventPublisher;
@@ -258,6 +266,23 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
       return links;
     }
 
+  }
+
+  private class SslAwareClientHttpRequestFactory extends SimpleClientHttpRequestFactory {
+    @Override protected void prepareConnection(HttpURLConnection connection, String httpMethod) throws IOException {
+      if(connection instanceof HttpsURLConnection) {
+        HttpsURLConnection httpsConnection = (HttpsURLConnection)connection;
+        if(!sslCmds.getValidate()) {
+          httpsConnection.setHostnameVerifier(new HostnameVerifier() {
+            @Override public boolean verify(String s, SSLSession sslSession) {
+              return true;
+            }
+          });
+          httpsConnection.setSSLSocketFactory(sslCmds.getCustomContext().getSocketFactory());
+        }
+      }
+      super.prepareConnection(connection, httpMethod);
+    }
   }
 
 }
