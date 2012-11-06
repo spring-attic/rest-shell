@@ -6,11 +6,11 @@ apply plugin: "application"
 
 // Library versions
 ext {
-  slf4jVersion = "1.6.6"
-  logbackVersion = "1.0.6"
+  slf4jVersion = "1.7.2"
+  logbackVersion = "1.0.7"
 
   springVersion = "3.1.2.RELEASE"
-  springShellVersion = "1.0.0.RELEASE"
+  springShellVersion = "1.0.1.BUILD-SNAPSHOT"
   hateoasVersion = "0.3.0.RELEASE"
   jacksonVersion = "1.9.10"
 
@@ -42,6 +42,7 @@ repositories {
   //maven { url "http://repo.springsource.org/libs-milestone" }
   maven { url "http://repo.springsource.org/libs-release" }
   maven { url "http://spring-roo-repository.springsource.org/release" }
+  mavenLocal()
 }
 
 // Artifact Configuration
