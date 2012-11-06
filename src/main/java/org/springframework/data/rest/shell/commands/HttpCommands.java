@@ -229,6 +229,10 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
       @CliOption(key = "from",
                  mandatory = false,
                  help = "The directory from which to read JSON files to POST to the server.") String fromDir,
+      @CliOption(key = "follow",
+                 mandatory = false,
+                 help = "If a Location header is returned, immediately follow it.",
+                 unspecifiedDefaultValue = "false") final boolean follow,
       @CliOption(key = "output",
                  mandatory = false,
                  help = "The path to dump the output to.") String outputPath) {
@@ -246,7 +250,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
       } else {
         obj = data;
       }
-      return execute(HttpMethod.PUT, obj, false, outputPath);
+      return execute(HttpMethod.PUT, obj, follow, outputPath);
     }
 
     if(null != fromDir) {
@@ -274,6 +278,10 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
       @CliOption(key = {"", "rel"},
                  mandatory = true,
                  help = "Issue HTTP DELETE to delete a resource.") PathOrRel path,
+      @CliOption(key = "follow",
+                 mandatory = false,
+                 help = "If a Location header is returned, immediately follow it.",
+                 unspecifiedDefaultValue = "false") final boolean follow,
       @CliOption(key = "output",
                  mandatory = false,
                  help = "The path to dump the output to.") String outputPath) {
@@ -282,7 +290,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
 
     requestUri = createUriComponentsBuilder(path.getPath()).build().toUri();
 
-    return execute(HttpMethod.DELETE, null, false, outputPath);
+    return execute(HttpMethod.DELETE, null, follow, outputPath);
   }
 
   public String execute(final HttpMethod method,
