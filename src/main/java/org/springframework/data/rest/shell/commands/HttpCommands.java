@@ -7,12 +7,16 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSession;
 
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -30,7 +34,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.ClientHttpRequest;
-import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.shell.core.CommandMarker;
@@ -66,11 +69,13 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
   private DiscoveryCommands     discoveryCmds;
   @Autowired
   private ContextCommands       contextCmds;
-  private ClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+  @Autowired
+  private SslCommands           sslCmds;
+  private SslAwareClientHttpRequestFactory requestFactory = new SslAwareClientHttpRequestFactory();
   @Autowired(required = false)
-  private RestTemplate             restTemplate   = new RestTemplate(requestFactory);
+  private RestTemplate                     restTemplate   = new RestTemplate(requestFactory);
   @Autowired(required = false)
-  private ObjectMapper             mapper         = new ObjectMapper();
+  private ObjectMapper                     mapper         = new ObjectMapper();
   private ApplicationEventPublisher ctx;
   private Object                    lastResult;
   private URI                       requestUri;
@@ -99,13 +104,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
                                  mandatory = true,
                                  help = "The timeout (in milliseconds) to wait for a response.",
                                  unspecifiedDefaultValue = "30000") int timeout) {
-    if(requestFactory instanceof SimpleClientHttpRequestFactory) {
-      ((SimpleClientHttpRequestFactory)requestFactory).setReadTimeout(timeout);
-    } else {
-      if(LOG.isWarnEnabled()) {
-        LOG.warn("Cannot set timeout on ClientHttpRequestFactory type " + requestFactory.getClass().getName());
-      }
-    }
+    requestFactory.setReadTimeout(timeout);
   }
 
   /**
@@ -571,6 +570,23 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
       }
 
       return new ResponseEntity<String>(body, response.getHeaders(), response.getStatusCode());
+    }
+  }
+
+  private class SslAwareClientHttpRequestFactory extends SimpleClientHttpRequestFactory {
+    @Override protected void prepareConnection(HttpURLConnection connection, String httpMethod) throws IOException {
+      if(connection instanceof HttpsURLConnection) {
+        HttpsURLConnection httpsConnection = (HttpsURLConnection)connection;
+        if(!sslCmds.getValidate()) {
+          httpsConnection.setHostnameVerifier(new HostnameVerifier() {
+            @Override public boolean verify(String s, SSLSession sslSession) {
+              return true;
+            }
+          });
+          httpsConnection.setSSLSocketFactory(sslCmds.getCustomContext().getSocketFactory());
+        }
+      }
+      super.prepareConnection(connection, httpMethod);
     }
   }
 
