@@ -5,38 +5,46 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.SmartLifecycle;
 import org.springframework.shell.core.JLineShellComponent;
-import org.springframework.shell.event.ShellStatus;
-import org.springframework.shell.event.ShellStatusListener;
 import org.springframework.stereotype.Component;
 
 /**
  * @author Jon Brisbin
  */
 @Component
-public class DotRcReader implements InitializingBean, ShellStatusListener {
+public class DotRcReader implements SmartLifecycle {
 
   @Autowired
   private JLineShellComponent shell;
   private boolean readDotRc = false;
 
-  @Override public void afterPropertiesSet() throws Exception {
-    shell.addShellStatusListener(this);
+  @Override public boolean isAutoStartup() {
+    return true;
   }
 
-  @Override public void onShellStatusChange(ShellStatus oldStatus, ShellStatus newStatus) {
-    if(oldStatus.getStatus() == ShellStatus.Status.STARTED
-        && newStatus.getStatus() == ShellStatus.Status.USER_INPUT) {
-      if(!readDotRc) {
-        try {
-          readDotRc();
-        } catch(Exception e) {
-          throw new IllegalStateException(e.getMessage(), e);
-        }
-      }
+  @Override public void stop(Runnable callback) {
+    callback.run();
+  }
+
+  @Override public void start() {
+    try {
+      readDotRc();
+    } catch(Exception e) {
+      throw new IllegalStateException(e.getMessage(), e);
     }
+  }
+
+  @Override public void stop() {
+  }
+
+  @Override public boolean isRunning() {
+    return readDotRc;
+  }
+
+  @Override public int getPhase() {
+    return Integer.MAX_VALUE;
   }
 
   private void sourceFile(File f) throws IOException {
