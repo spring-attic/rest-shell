@@ -185,6 +185,37 @@ Since the rest-shell is aware of environment variables and system properties, yo
 		... resources for this URL
 		http://mylongdomain.com/api:>
 
+### Per-user shell initialization
+
+The rest-shell supports a "dotrc" type of initialization by reading in all files found in the `$HOME/.rest-shell/` directory and assuming they have shell commands in them. The rest-shell will execute these commands on startup. This makes it easy to set variables for commonly-used URIs or possibly set a `baseUri`.
+
+		echo "var set --name svcuri --value http://api.myservice.com/v1" > ~/.rest-shell/00-vars
+		echo "discover #{svcuri}" > ~/.rest-shell/01-baseUri
+
+		> rest-shell
+
+		INFO: No resources found...
+		INFO: Base URI set to 'http://api.myservice.com/v1'
+
+		 ___ ___  __ _____  __  _  _     _ _  __
+		| _ \ __/' _/_   _/' _/| || |   / / | \ \
+		| v / _|`._`. | | `._`.| >< |  / / /   > >
+		|_|_\___|___/ |_| |___/|_||_| |_/_/   /_/
+		1.1.5.BUILD-SNAPSHOT
+
+		Welcome to the REST shell. For assistance hit TAB or type "help".
+		http://api.myservice.com/v1:>
+
+### SSL Certificate Validation
+
+If you generate a self-signed certificate for your server, by default the rest-shell will complain and refuse to connect. This is the default behavior of RestTemplate. To turn off certificate and hostname checking, use the `ssl validate --enabled false` command.
+
+### HTTP Basic authentication
+
+There is also a convenience command for setting an HTTP Basic authentication header. Use `auth basic --username user --pasword passwd` to set a username and password to base64 encode and place into the Authorization header that will be part of the current session's headers.
+
+You can clear the authentication by using the `auth clear` command or by removing the Authorization header using the `headers clear` command.
+
 ### Commands
 
 The rest-shell provides the following commands:
@@ -207,4 +238,5 @@ The rest-shell provides the following commands:
 * `put` - HTTP PUT to the given path, passing JSON given in the `--data` parameter.
 * `delete` - HTTP DELETE to the given path.
 * `auth basic` - Set an HTTP Basic authentication token for use in this session.
+* `auth clear` - Clear the Authorization header currently in use.
 * `ssl validate` - Disable certificate checking to work with self-signed certificates.
