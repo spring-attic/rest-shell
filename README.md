@@ -10,8 +10,8 @@ Download the binary .tar.gz package:
 
 [https://github.com/SpringSource/rest-shell/downloads](https://github.com/SpringSource/rest-shell/downloads)
 
-		tar -zxvf rest-shell-1.1.4.RELEASE.tar.gz
-		cd rest-shell-1.1.4.RELEASE
+		tar -zxvf rest-shell-1.2.0.RELEASE.tar.gz
+		cd rest-shell-1.2.0.RELEASE
 		bin/rest-shell
 
 # Building and Running
@@ -19,7 +19,7 @@ Download the binary .tar.gz package:
 		git clone git://github.com/SpringSource/rest-shell.git
 		cd rest-shell
 		./gradlew installApp
-		cd build/install/rest-shell-1.1.4.RELEASE
+		cd build/install/rest-shell-1.2.0.RELEASE
 		bin/rest-shell
 
 # Getting Started
@@ -201,7 +201,7 @@ The rest-shell supports a "dotrc" type of initialization by reading in all files
 		| _ \ __/' _/_   _/' _/| || |   / / | \ \
 		| v / _|`._`. | | `._`.| >< |  / / /   > >
 		|_|_\___|___/ |_| |___/|_||_| |_/_/   /_/
-		1.2.1.BUILD-SNAPSHOT
+		1.2.0.RELEASE
 
 		Welcome to the REST shell. For assistance hit TAB or type "help".
 		http://api.myservice.com/v1:>
