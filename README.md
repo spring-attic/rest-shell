@@ -201,7 +201,7 @@ The rest-shell supports a "dotrc" type of initialization by reading in all files
 		| _ \ __/' _/_   _/' _/| || |   / / | \ \
 		| v / _|`._`. | | `._`.| >< |  / / /   > >
 		|_|_\___|___/ |_| |___/|_||_| |_/_/   /_/
-		1.1.5.BUILD-SNAPSHOT
+		1.2.1.BUILD-SNAPSHOT
 
 		Welcome to the REST shell. For assistance hit TAB or type "help".
 		http://api.myservice.com/v1:>

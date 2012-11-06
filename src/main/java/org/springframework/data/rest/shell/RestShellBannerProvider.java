@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 @Order(Integer.MIN_VALUE)
 public class RestShellBannerProvider implements BannerProvider {
 
-  private static final String VERSION = "1.1.5.BUILD-SNAPSHOT";
+  private static final String VERSION = "1.2.1.BUILD-SNAPSHOT";
   private static final String BANNER  = "\n ___ ___  __ _____  __  _  _     _ _  __    \n" +
       "| _ \\ __/' _/_   _/' _/| || |   / / | \\ \\   \n" +
       "| v / _|`._`. | | `._`.| >< |  / / /   > >  \n" +
