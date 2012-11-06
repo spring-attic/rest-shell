@@ -133,7 +133,7 @@ public class ContextCommands implements CommandMarker, InitializingBean {
       @CliOption(
           key = "value",
           mandatory = false,
-          help = "The value of the variable to set") String value) {
+          help = "The expression to evaluate") String value) {
 
     if(null != name) {
       if(variables.containsKey(name)) {
