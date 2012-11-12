@@ -222,7 +222,8 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
   public String put(
       @CliOption(key = {"", "rel"},
                  mandatory = false,
-                 help = "The path to the resource.") PathOrRel path,
+                 help = "The path to the resource.",
+                 unspecifiedDefaultValue = "") PathOrRel path,
       @CliOption(key = "data",
                  mandatory = true,
                  help = "The JSON data to use as the resource.") String data,
@@ -276,8 +277,9 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
   @CliCommand(value = "delete", help = "Issue HTTP DELETE to delete a resource.")
   public String delete(
       @CliOption(key = {"", "rel"},
-                 mandatory = true,
-                 help = "Issue HTTP DELETE to delete a resource.") PathOrRel path,
+                 mandatory = false,
+                 help = "Issue HTTP DELETE to delete a resource.",
+                 unspecifiedDefaultValue = "") PathOrRel path,
       @CliOption(key = "follow",
                  mandatory = false,
                  help = "If a Location header is returned, immediately follow it.",
@@ -545,7 +547,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
       contextCmds.variables.put("responseBody", null);
 
       MediaType ct = response.getHeaders().getContentType();
-      if(null != ct && ct.getSubtype().endsWith("json")) {
+      if(null != body && null != ct && ct.getSubtype().endsWith("json")) {
         // Pretty-print the JSON
         if(body.startsWith("{")) {
           lastResult = mapper.readValue(body.getBytes(), Map.class);
