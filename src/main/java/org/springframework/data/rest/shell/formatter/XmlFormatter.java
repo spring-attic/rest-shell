@@ -15,7 +15,7 @@ import javax.xml.transform.stream.StreamResult;
 import org.xml.sax.InputSource;
 
 public class XmlFormatter extends FormatterSupport {
-  private final List<String> supportedContentTypes = Arrays.asList("xml", "atom+xml");
+  private final List<String> supportedContentTypes = Arrays.asList("xml");
 
   @Override
   public Collection<String> getSupportedList() {
