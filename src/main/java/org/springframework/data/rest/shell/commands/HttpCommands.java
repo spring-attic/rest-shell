@@ -28,6 +28,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.data.rest.shell.context.ResponseEvent;
+import org.springframework.data.rest.shell.formatter.FormatProvider;
+import org.springframework.data.rest.shell.formatter.Formatter;
 import org.springframework.hateoas.Link;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -79,6 +81,8 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
   private ApplicationEventPublisher ctx;
   private Object                    lastResult;
   private URI                       requestUri;
+  @Autowired
+  private FormatProvider formatProvider;
 
   @Override public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
     this.ctx = applicationEventPublisher;
@@ -498,7 +502,8 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
     }
     buffer.append("< ").append(OsUtils.LINE_SEPARATOR);
     if(null != response.getBody()) {
-      buffer.append(response.getBody());
+      final Formatter formatter = formatProvider.getFormatter(response.getHeaders().getContentType().getSubtype());
+      buffer.append(formatter.format(response.getBody()));
     }
   }
 
