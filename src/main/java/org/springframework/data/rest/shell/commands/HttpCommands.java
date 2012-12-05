@@ -240,11 +240,10 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
                  unspecifiedDefaultValue = "false") final boolean follow,
       @CliOption(key = "output",
                  mandatory = false,
-                 help = "The path to dump the output to.") String outputPath) {
+                 help = "The path to dump the output to.") String outputPath) throws IOException {
 
     fromDir = contextCmds.evalAsString(fromDir);
     outputPath = contextCmds.evalAsString(outputPath);
-    data = data.replaceAll("\\\\", "").replaceAll("'", "\"");
 
     requestUri = createUriComponentsBuilder(path.getPath()).build().toUri();
 
@@ -253,7 +252,11 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
       if(data.contains("#{")) {
         obj = contextCmds.eval(data);
       } else {
-        obj = data;
+        Class<?> targetType = Map.class;
+        if(data.startsWith("[")) {
+          targetType = List.class;
+        }
+        obj = mapper.readValue(data.replaceAll("\\\\", "").replaceAll("'", "\""), targetType);
       }
       return execute(HttpMethod.PUT, obj, follow, outputPath);
     }
