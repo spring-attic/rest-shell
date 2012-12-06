@@ -307,9 +307,13 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
                         final boolean follow,
                         final String outputPath) {
     final StringBuilder buffer = new StringBuilder();
+    MediaType contentType = configCmds.getHeaders().getContentType();
+    if(contentType == null) {
+      contentType = MediaType.APPLICATION_JSON;
+    }
 
     ResponseErrorHandler origErrHandler = restTemplate.getErrorHandler();
-    RequestHelper helper = (null == data ? new RequestHelper() : new RequestHelper(data, MediaType.APPLICATION_JSON));
+    RequestHelper helper = (null == data ? new RequestHelper() : new RequestHelper(data, contentType));
     ResponseEntity<String> response;
     try {
       restTemplate.setErrorHandler(new ResponseErrorHandler() {
@@ -607,5 +611,4 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
       super.prepareConnection(connection, httpMethod);
     }
   }
-
 }
