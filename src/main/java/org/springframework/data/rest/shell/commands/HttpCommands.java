@@ -384,7 +384,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
                                  final String fromPath,
                                  final boolean follow,
                                  final String outputPath) throws IOException {
-    final AtomicInteger numItems = new AtomicInteger(0);
+    String output = "";
 
     File fromFile = new File(fromPath);
     if(!fromFile.exists()) {
@@ -392,6 +392,8 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
     }
 
     if(fromFile.isDirectory()) {
+      final AtomicInteger numItems = new AtomicInteger(0);
+
       FilenameFilter jsonFilter = new FilenameFilter() {
         @Override public boolean accept(File file, String s) {
           return s.endsWith(".json");
@@ -409,6 +411,8 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
 
         numItems.incrementAndGet();
       }
+
+      output = numItems.get() + " files uploaded to the server using " + method;
     } else {
       Object body = readFile(fromFile);
       String response = execute(HttpMethod.POST,
@@ -418,10 +422,11 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
       if(LOG.isDebugEnabled()) {
         LOG.debug(response);
       }
-      numItems.incrementAndGet();
+
+      output = response;
     }
 
-    return numItems.get() + " files uploaded to the server using " + method;
+    return output;
   }
 
   private Object readFile(File file) throws IOException {
