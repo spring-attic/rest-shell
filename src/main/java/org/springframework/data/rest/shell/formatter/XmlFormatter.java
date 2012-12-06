@@ -26,6 +26,7 @@ public class XmlFormatter extends FormatterSupport {
   public String format(String nonFormattedString) {
     try {
       Transformer serializer = SAXTransformerFactory.newInstance().newTransformer();
+      serializer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "true");
       serializer.setOutputProperty(OutputKeys.INDENT, "yes");
       serializer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
       Source xmlSource = new SAXSource(new InputSource(new ByteArrayInputStream(nonFormattedString.getBytes())));
