@@ -307,9 +307,13 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
                         final boolean follow,
                         final String outputPath) {
     final StringBuilder buffer = new StringBuilder();
+    MediaType contentType = configCmds.getHeaders().getContentType();
+    if(contentType == null) {
+      contentType = MediaType.APPLICATION_JSON;
+    }
 
     ResponseErrorHandler origErrHandler = restTemplate.getErrorHandler();
-    RequestHelper helper = (null == data ? new RequestHelper() : new RequestHelper(data, MediaType.APPLICATION_JSON));
+    RequestHelper helper = (null == data ? new RequestHelper() : new RequestHelper(data, contentType));
     ResponseEntity<String> response;
     try {
       restTemplate.setErrorHandler(new ResponseErrorHandler() {
@@ -380,7 +384,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
                                  final String fromPath,
                                  final boolean follow,
                                  final String outputPath) throws IOException {
-    final AtomicInteger numItems = new AtomicInteger(0);
+    String output = "";
 
     File fromFile = new File(fromPath);
     if(!fromFile.exists()) {
@@ -388,6 +392,8 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
     }
 
     if(fromFile.isDirectory()) {
+      final AtomicInteger numItems = new AtomicInteger(0);
+
       FilenameFilter jsonFilter = new FilenameFilter() {
         @Override public boolean accept(File file, String s) {
           return s.endsWith(".json");
@@ -405,6 +411,8 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
 
         numItems.incrementAndGet();
       }
+
+      output = numItems.get() + " files uploaded to the server using " + method;
     } else {
       Object body = readFile(fromFile);
       String response = execute(HttpMethod.POST,
@@ -414,10 +422,11 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
       if(LOG.isDebugEnabled()) {
         LOG.debug(response);
       }
-      numItems.incrementAndGet();
+
+      output = response;
     }
 
-    return numItems.get() + " files uploaded to the server using " + method;
+    return output;
   }
 
   private Object readFile(File file) throws IOException {
@@ -607,5 +616,4 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
       super.prepareConnection(connection, httpMethod);
     }
   }
-
 }
