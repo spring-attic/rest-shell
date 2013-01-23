@@ -6,14 +6,13 @@ import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSession;
@@ -144,7 +143,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
     if(null != params) {
       for(Object key : params.keySet()) {
         Object o = params.get(key);
-        ucb.queryParam(key.toString(), encode(o.toString()));
+        ucb.queryParam(key.toString(), o.toString());
       }
     }
     requestUri = ucb.build().toUri();
@@ -465,14 +464,6 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
       }
     }
     return ucb;
-  }
-
-  private static String encode(String s) {
-    try {
-      return URLEncoder.encode(s, "ISO-8859-1");
-    } catch(UnsupportedEncodingException e) {
-      throw new IllegalStateException(e);
-    }
   }
 
   private void outputRequest(String method, URI requestUri, StringBuilder buffer) {
