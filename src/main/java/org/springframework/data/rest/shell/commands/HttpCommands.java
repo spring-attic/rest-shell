@@ -132,7 +132,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
                  unspecifiedDefaultValue = "false") final boolean follow,
       @CliOption(key = "params",
                  mandatory = false,
-                 help = "Query parameters to add to the URL as a simplified JSON fragment '{paramName:\"paramValue\"}' or '{paramName: [\"paramValue1\",\"paramValue2\"]}' for multiple values.") Map params,
+                 help = "Query parameters to add to the URL as a simplified JSON fragment \"{paramName:'paramValue'}\" or \"{paramName: ['paramValue1','paramValue2']}\" for multiple values.") Map params,
       @CliOption(key = "output",
                  mandatory = false,
                  help = "The path to dump the output to.") String outputPath) {
