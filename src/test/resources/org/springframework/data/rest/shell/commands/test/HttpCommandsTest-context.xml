@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:mockito="http://www.mockito.org/spring/mockito"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.mockito.org/spring/mockito classpath:spring/mockito.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.1.xsd">
+	
+	<import resource="classpath:/META-INF/spring/spring-shell-plugin.xml" />
+	
+	<mockito:mock id="restTemplate" class="org.springframework.web.client.RestTemplate" />
+	
+	<mockito:mock id="shell" class="org.springframework.shell.core.JLineShellComponent" />
+	
+	<bean id="formatProvider" class="org.springframework.data.rest.shell.formatter.FormatProvider" />
+	
+	<util:list id="messageConverters">
+		<bean class="org.springframework.http.converter.ByteArrayHttpMessageConverter" />
+		<bean class="org.springframework.http.converter.StringHttpMessageConverter" />
+		<bean class="org.springframework.http.converter.ResourceHttpMessageConverter" />
+		<bean class="org.springframework.http.converter.xml.SourceHttpMessageConverter" />
+		<!-- TODO: Need to find this class 
+		<bean class="AllEncompassingFormHttpMessageConverter" /> -->
+		<bean class="org.springframework.http.converter.json.MappingJacksonHttpMessageConverter" />
+	</util:list>
+</beans>

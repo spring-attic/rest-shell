@@ -6,14 +6,13 @@ import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSession;
@@ -133,7 +132,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
                  unspecifiedDefaultValue = "false") final boolean follow,
       @CliOption(key = "params",
                  mandatory = false,
-                 help = "Query parameters to add to the URL as a simplified JSON fragment '{paramName:\"paramValue\"}'.") Map params,
+                 help = "Query parameters to add to the URL as a simplified JSON fragment \"{paramName:'paramValue'}\" or \"{paramName: ['paramValue1','paramValue2']}\" for multiple values.") Map params,
       @CliOption(key = "output",
                  mandatory = false,
                  help = "The path to dump the output to.") String outputPath) {
@@ -144,7 +143,19 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
     if(null != params) {
       for(Object key : params.keySet()) {
         Object o = params.get(key);
-        ucb.queryParam(key.toString(), encode(o.toString()));
+        if(List.class.isAssignableFrom(o.getClass()))
+        {
+        	@SuppressWarnings("rawtypes")
+			List list = (List)o;
+        	for(Object item : list)
+        	{
+        		ucb.queryParam(key.toString(), item.toString());
+        	}
+        }
+        else
+        {
+        	ucb.queryParam(key.toString(), o.toString());
+        }
       }
     }
     requestUri = ucb.build().toUri();
@@ -465,14 +476,6 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
       }
     }
     return ucb;
-  }
-
-  private static String encode(String s) {
-    try {
-      return URLEncoder.encode(s, "ISO-8859-1");
-    } catch(UnsupportedEncodingException e) {
-      throw new IllegalStateException(e);
-    }
   }
 
   private void outputRequest(String method, URI requestUri, StringBuilder buffer) {

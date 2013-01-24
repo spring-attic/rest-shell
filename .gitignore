@@ -2,3 +2,8 @@
 .gradle
 *.i*
 build
+/bin
+/.settings
+/.classpath
+/.project
+/.rest-shell.log
