@@ -11,6 +11,8 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,21 +54,51 @@ public class HttpCommandsTest
 	@Resource(name = "messageConverters")
 	private List<HttpMessageConverter<?>> converters;
 
-	@SuppressWarnings("unchecked")
 	@Test
 	public void getShouldNotDoubleEncode()
 		throws Exception
+	{
+		String testMessage = "{message:\"Don't double encode!\"}";
+		testQueryStringConvertion("Request URI should not be double encoded for GET", "test", testMessage, "test="+testMessage);
+	}
+
+	@Test
+	public void getWithMultiValueParameter()
+		throws Exception
+	{
+		List<String> paramValue = Arrays.asList("value1", "value2");		
+		testQueryStringConvertion("Multivalue paramters should be handled properly", "test", paramValue, "test=value1&test=value2" );
+	}
+
+	@Test
+	public void getWithSingleValueParameter()
+		throws Exception
+	{
+		testQueryStringConvertion("Multivalue paramters should be handled properly", "test", "value", "test=value" );
+	}
+
+	/**
+	 * Utility to test if a parameter generates the proper expected query string to a URI.
+	 *
+	 * @param assertionMessage The message to include with the assertion test if it fails.
+	 * @param paramValue The value of the parameter to test conversion of.
+	 * @param expectedQueryString The query string that is expected to be the result of converting paramValue
+	 * 
+	 * @throws URISyntaxException
+	 */
+	private void testQueryStringConvertion(String assertionMessage, String paramName, Object paramValue, String expectedQueryString)
+		throws URISyntaxException
 	{
 		HttpHeaders headers = new HttpHeaders();
 		headers.add("Content-Type", "application/json");
 
 		PathOrRel path = new PathOrRel("http://foo/test");
-		Map<String, String> params = new HashMap<String, String>();
-		String testMessage = "{message:\"Don't double encode!\"}";
-		params.put("test", testMessage);
+		@SuppressWarnings("rawtypes")
+		Map params = new HashMap();
+		
+		params.put(paramName, paramValue);
 
-		URI queryURI = new URI("http", null, "foo", -1, "/test", "test="
-				+ testMessage, null);
+		URI queryURI = new URI("http", null, "foo", -1, "/test", expectedQueryString, null);
 		when(restTemplate.getMessageConverters()).thenReturn(converters);
 		when(
 				restTemplate.execute(eq(queryURI), any(HttpMethod.class),
@@ -82,8 +114,8 @@ public class HttpCommandsTest
 						HttpStatus.OK));
 
 		String response = command.get(path, false, params, null);
-
-		Assert.assertTrue("Request URI should not be double encoded for GET",
+		Assert.assertTrue(assertionMessage,
 				response.contains("{test:\"Pass\"}"));
+
 	}
 }
