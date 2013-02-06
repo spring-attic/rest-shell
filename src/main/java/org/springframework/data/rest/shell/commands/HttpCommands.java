@@ -229,7 +229,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
                  help = "The path to the resource.",
                  unspecifiedDefaultValue = "") PathOrRel path,
       @CliOption(key = "data",
-                 mandatory = true,
+                 mandatory = false,
                  help = "The JSON data to use as the resource.") String data,
       @CliOption(key = "from",
                  mandatory = false,
@@ -415,7 +415,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
       output = numItems.get() + " files uploaded to the server using " + method;
     } else {
       Object body = readFile(fromFile);
-      String response = execute(HttpMethod.POST,
+      String response = execute(method,
                                 body,
                                 follow,
                                 outputPath);
