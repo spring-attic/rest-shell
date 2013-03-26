@@ -49,7 +49,6 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
 
   private static final MediaType COMPACT_JSON = MediaType.valueOf("application/x-spring-data-compact+json");
   private static final Logger    LOG          = LoggerFactory.getLogger(DiscoveryCommands.class);
-
   @Autowired
   private ConfigurationCommands configCmds;
   @Autowired
@@ -63,6 +62,12 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
   private ObjectMapper                     mapper         = new ObjectMapper();
   private Map<String, String>              resources      = new HashMap<String, String>();
   private ApplicationEventPublisher ctx;
+
+  private static String pad(String s, int len) {
+    char[] pad = new char[len - s.length()];
+    Arrays.fill(pad, ' ');
+    return s + new String(pad);
+  }
 
   @Override public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
     this.ctx = applicationEventPublisher;
@@ -96,7 +101,7 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
   public String discover(
       @CliOption(key = {"", "rel"},
                  mandatory = false,
-                 help = "The base URI to use for this session.",
+                 help = "The URI at which to discover resources.",
                  unspecifiedDefaultValue = "/") PathOrRel path) throws IOException, URISyntaxException {
 
     URI requestUri;
@@ -213,12 +218,6 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
                  mandatory = true,
                  help = "The URI to follow.") PathOrRel path) throws IOException, URISyntaxException {
     configCmds.setBaseUri(path.getPath());
-  }
-
-  private static String pad(String s, int len) {
-    char[] pad = new char[len - s.length()];
-    Arrays.fill(pad, ' ');
-    return s + new String(pad);
   }
 
   private class ExtractLinksHelper implements RequestCallback, ResponseExtractor<List<Link>> {
