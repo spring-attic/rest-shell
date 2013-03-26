@@ -13,27 +13,27 @@ import org.springframework.stereotype.Component;
 @Order(Integer.MIN_VALUE)
 public class RestShellBannerProvider implements BannerProvider {
 
-  private static final String VERSION = "1.2.2.BUILD-SNAPSHOT";
-  private static final String BANNER  = "\n ___ ___  __ _____  __  _  _     _ _  __    \n" +
-      "| _ \\ __/' _/_   _/' _/| || |   / / | \\ \\   \n" +
-      "| v / _|`._`. | | `._`.| >< |  / / /   > >  \n" +
-      "|_|_\\___|___/ |_| |___/|_||_| |_/_/   /_/   \n";
-  private static final String WELCOME = "Welcome to the REST shell. For assistance hit TAB or type \"help\".";
+	private static final String VERSION = "1.2.2";
+	private static final String BANNER  = "\n ___ ___  __ _____  __  _  _     _ _  __    \n" +
+			"| _ \\ __/' _/_   _/' _/| || |   / / | \\ \\   \n" +
+			"| v / _|`._`. | | `._`.| >< |  / / /   > >  \n" +
+			"|_|_\\___|___/ |_| |___/|_||_| |_/_/   /_/   \n";
+	private static final String WELCOME = "Welcome to the REST shell. For assistance hit TAB or type \"help\".";
 
-  @Override public String getBanner() {
-    return BANNER + getVersion() + "\n";
-  }
+	@Override public String getBanner() {
+		return BANNER + getVersion() + "\n";
+	}
 
-  @Override public String getVersion() {
-    return VERSION;
-  }
+	@Override public String getVersion() {
+		return VERSION;
+	}
 
-  @Override public String getWelcomeMessage() {
-    return WELCOME;
-  }
+	@Override public String getWelcomeMessage() {
+		return WELCOME;
+	}
 
-  @Override public String name() {
-    return "rest-shell";
-  }
+	@Override public String name() {
+		return "rest-shell";
+	}
 
 }

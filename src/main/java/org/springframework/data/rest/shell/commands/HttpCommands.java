@@ -411,9 +411,17 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
 					}
 				}
 			}
-			return ">> " + outputPath;
+			return "\n>> " + outputPath + "\n";
 		} else {
-			return buffer.toString();
+			switch(response.getStatusCode()) {
+				case BAD_REQUEST:
+				case INTERNAL_SERVER_ERROR: {
+					System.err.println(buffer.toString());
+					return null;
+				}
+				default:
+					return buffer.toString();
+			}
 		}
 	}
 
@@ -421,8 +429,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
 	                               final String fromPath,
 	                               final boolean follow,
 	                               final String outputPath) throws IOException {
-		String output = "";
-
+		String output;
 		File fromFile = new File(fromPath);
 		if(!fromFile.exists()) {
 			throw new IllegalArgumentException("Path " + fromPath + " not found.");
@@ -445,11 +452,12 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
 				if(LOG.isDebugEnabled()) {
 					LOG.debug(response);
 				}
-
-				numItems.incrementAndGet();
+				if(null != response) {
+					numItems.incrementAndGet();
+				}
 			}
 
-			output = numItems.get() + " files uploaded to the server using " + method;
+			output = "\n" + numItems.get() + " files successfully uploaded to the server using " + method + "\n";
 		} else {
 			Object body = readFile(fromFile);
 			String response = execute(method,
