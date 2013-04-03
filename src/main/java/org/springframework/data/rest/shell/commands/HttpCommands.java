@@ -592,7 +592,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
 					mapper.writeValue(request.getBody(), body);
 				}
 			}
-			contextCmds.variables.put("request", request);
+			//contextCmds.variables.put("request", request);
 		}
 
 		@SuppressWarnings({"unchecked"})
