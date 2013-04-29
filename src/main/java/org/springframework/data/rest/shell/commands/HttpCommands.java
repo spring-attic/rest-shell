@@ -377,6 +377,9 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
 			}
 			// Calling this method recursively results in hang, so just retry once.
 			response = restTemplate.execute(requestUri, method, helper, helper);
+		} catch(RuntimeException re) {
+			LOG.error(re.getMessage(), re);
+			throw re;
 		} finally {
 			restTemplate.setErrorHandler(origErrHandler);
 		}
