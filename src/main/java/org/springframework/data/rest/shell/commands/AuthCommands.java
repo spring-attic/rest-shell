@@ -42,10 +42,10 @@ public class AuthCommands implements CommandMarker {
           help = "The username to use") String username,
       @CliOption(
           key = "password",
-          mandatory = true,
+          mandatory = false,
           help = "The password to use") String password) throws IOException {
 
-    String token = BASIC + Base64.encodeBase64String((username + ":" + password).getBytes());
+    String token = BASIC + Base64.encodeBase64String((username + ":" + ((password != null) ? password : "")).getBytes());
     configCmds.setHeader(AUTHORIZATION, token);
     return HEADER + token;
   }
