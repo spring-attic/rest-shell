@@ -615,7 +615,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
 
 				contextCmds.variables.put("responseBody", lastResult);
 
-				if(lastResult instanceof Map && ((Map)lastResult).containsKey("links")) {
+				if(lastResult instanceof Map && ((Map)lastResult).containsKey("links") && ((Map)lastResult).get("links") != null) {
 					Links linksobj;
 					if(contextCmds.variables.containsKey("links")) {
 						linksobj = (Links)contextCmds.variables.get("links");
