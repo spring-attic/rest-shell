@@ -377,6 +377,9 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
 			}
 			// Calling this method recursively results in hang, so just retry once.
 			response = restTemplate.execute(requestUri, method, helper, helper);
+		} catch(RuntimeException re) {
+			LOG.error(re.getMessage(), re);
+			throw re;
 		} finally {
 			restTemplate.setErrorHandler(origErrHandler);
 		}
@@ -615,7 +618,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
 
 				contextCmds.variables.put("responseBody", lastResult);
 
-				if(lastResult instanceof Map && ((Map)lastResult).containsKey("links")) {
+				if(lastResult instanceof Map && ((Map)lastResult).containsKey("links") && ((Map)lastResult).get("links") != null) {
 					Links linksobj;
 					if(contextCmds.variables.containsKey("links")) {
 						linksobj = (Links)contextCmds.variables.get("links");
