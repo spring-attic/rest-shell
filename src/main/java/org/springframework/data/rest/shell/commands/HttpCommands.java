@@ -11,6 +11,7 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -559,6 +560,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
 	private class RequestHelper implements RequestCallback,
 	                                       ResponseExtractor<ResponseEntity<String>> {
 
+		private final Charset utf8 = Charset.forName("UTF-8");
 		private Object    body;
 		private MediaType contentType;
 		private HttpMessageConverterExtractor<String> extractor =
@@ -606,11 +608,11 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
 			if(null != body && null != ct && ct.getSubtype().endsWith("json")) {
 				// Pretty-print the JSON
 				if(body.startsWith("{")) {
-					lastResult = mapper.readValue(body.getBytes(), Map.class);
+					lastResult = mapper.readValue(body.getBytes(utf8), Map.class);
 				} else if(body.startsWith("[")) {
-					lastResult = mapper.readValue(body.getBytes(), List.class);
+					lastResult = mapper.readValue(body.getBytes(utf8), List.class);
 				} else {
-					lastResult = new String(body.getBytes());
+					lastResult = new String(body.getBytes(utf8));
 				}
 
 				contextCmds.variables.put("responseBody", lastResult);
