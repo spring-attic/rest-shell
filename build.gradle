@@ -38,11 +38,12 @@ project.targetCompatibility = 1.6
 
 // Repositories
 repositories {
-  //maven { url "http://repo.springsource.org/libs-snapshot" }
+  mavenLocal()
+  mavenCentral()
+  maven { url "http://repo.springsource.org/libs-snapshot" }
   //maven { url "http://repo.springsource.org/libs-milestone" }
   maven { url "http://repo.springsource.org/libs-release" }
   maven { url "http://spring-roo-repository.springsource.org/release" }
-  mavenLocal()
 }
 
 // Artifact Configuration
