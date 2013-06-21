@@ -1,9 +1,9 @@
 package org.springframework.data.rest.shell;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.data.rest.shell.commands.ConfigurationCommands;
-import org.springframework.data.rest.shell.commands.DotRcReader;
 import org.springframework.shell.plugin.PromptProvider;
 import org.springframework.stereotype.Component;
 
@@ -15,27 +15,19 @@ import org.springframework.stereotype.Component;
  * @author Jon Brisbin
  */
 @Component
-@Order(Integer.MIN_VALUE)
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class RestShellPromptProvider implements PromptProvider {
 
 	@Autowired
 	private ConfigurationCommands configCmds;
-	@Autowired
-	private DotRcReader           dotRcReader;
-	private boolean readDotRc = false;
 
-	@Override public String getPrompt() {
-		if(!readDotRc) {
-			try {
-				dotRcReader.readDotRc();
-			} catch(Exception e) {
-				throw new IllegalStateException(e);
-			}
-		}
+	@Override
+	public String getPrompt() {
 		return configCmds.getBaseUri().toString() + ":" + "> ";
 	}
 
-	@Override public String name() {
+	@Override
+	public String name() {
 		return configCmds.getBaseUri().toString();
 	}
 
