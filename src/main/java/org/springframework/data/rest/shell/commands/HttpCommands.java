@@ -125,7 +125,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
 			@CliOption(key = "follow",
 								 mandatory = false,
 								 help = "If a Location header is returned, immediately follow it.",
-								 unspecifiedDefaultValue = "false") final boolean follow,
+								 unspecifiedDefaultValue = "false") final String follow,
 			@CliOption(key = "params",
 								 mandatory = false,
 								 help = "Query parameters to add to the URL as a simplified JSON fragment '{paramName:\"paramValue\"}'.") Map params,
@@ -169,7 +169,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
 			@CliOption(key = "follow",
 								 mandatory = false,
 								 help = "If a Location header is returned, immediately follow it.",
-								 unspecifiedDefaultValue = "false") final boolean follow,
+								 unspecifiedDefaultValue = "false") final String follow,
 			@CliOption(key = "params",
 								 mandatory = false,
 								 help = "Query parameters to add to the URL as a simplified JSON fragment '{paramName:\"paramValue\"}'.") Map params,
@@ -238,7 +238,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
 			@CliOption(key = "follow",
 								 mandatory = false,
 								 help = "If a Location header is returned, immediately follow it.",
-								 unspecifiedDefaultValue = "false") final boolean follow,
+								 unspecifiedDefaultValue = "false") final String follow,
 			@CliOption(key = "params",
 								 mandatory = false,
 								 help = "Query parameters to add to the URL as a simplified JSON fragment '{paramName:\"paramValue\"}'.") Map params,
@@ -282,7 +282,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
 		if (null != fromDir) {
 			fromDir = contextCmds.evalAsString(fromDir);
 			try {
-				return readFileOrFiles(HttpMethod.PUT, fromDir, false, outputPath);
+				return readFileOrFiles(HttpMethod.PUT, fromDir, "false", outputPath);
 			} catch (IOException e) {
 				throw new IllegalStateException(e);
 			}
@@ -306,7 +306,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
 			@CliOption(key = "follow",
 								 mandatory = false,
 								 help = "If a Location header is returned, immediately follow it.",
-								 unspecifiedDefaultValue = "false") final boolean follow,
+								 unspecifiedDefaultValue = "false") final String follow,
 			@CliOption(key = "params",
 								 mandatory = false,
 								 help = "Query parameters to add to the URL as a simplified JSON fragment '{paramName:\"paramValue\"}'.") Map params,
@@ -330,7 +330,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
 
 	public String execute(final HttpMethod method,
 												final Object data,
-												final boolean follow,
+												final String follow,
 												final String outputPath) {
 		final StringBuilder buffer = new StringBuilder();
 		MediaType contentType = configCmds.getHeaders().getContentType();
@@ -373,7 +373,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
 			restTemplate.setErrorHandler(origErrHandler);
 		}
 
-		if (follow && response.getHeaders().containsKey(LOCATION_HEADER)) {
+		if ("true".equals(follow) && response.getHeaders().containsKey(LOCATION_HEADER)) {
 			try {
 				configCmds.setBaseUri(response.getHeaders().getFirst(LOCATION_HEADER));
 			} catch (URISyntaxException e) {
@@ -419,7 +419,7 @@ public class HttpCommands implements CommandMarker, ApplicationEventPublisherAwa
 
 	private String readFileOrFiles(final HttpMethod method,
 																 final String fromPath,
-																 final boolean follow,
+																 final String follow,
 																 final String outputPath) throws IOException {
 		String output;
 		File fromFile = new File(fromPath);
