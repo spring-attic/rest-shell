@@ -8,7 +8,7 @@ Using Homebrew:
 
 Download the binary .tar.gz package:
 
-[https://github.com/SpringSource/rest-shell/downloads](https://github.com/SpringSource/rest-shell/downloads)
+[https://github.com/spring-projects/rest-shell/downloads](https://github.com/spring-projects/rest-shell/downloads)
 
 		tar -zxvf rest-shell-1.2.0.RELEASE.tar.gz
 		cd rest-shell-1.2.0.RELEASE
@@ -16,7 +16,7 @@ Download the binary .tar.gz package:
 
 # Building and Running
 
-		git clone git://github.com/SpringSource/rest-shell.git
+		git clone git://github.com/spring-projects/rest-shell.git
 		cd rest-shell
 		./gradlew installApp
 		cd build/install/rest-shell-1.2.0.RELEASE
