@@ -10,8 +10,8 @@ Download the binary .tar.gz package:
 
 [https://github.com/spring-projects/rest-shell/downloads](https://github.com/spring-projects/rest-shell/downloads)
 
-		tar -zxvf rest-shell-1.2.0.RELEASE.tar.gz
-		cd rest-shell-1.2.0.RELEASE
+		tar -zxvf rest-shell-1.2.1.RELEASE.tar.gz
+		cd rest-shell-1.2.1.RELEASE
 		bin/rest-shell
 
 # Building and Running
@@ -19,7 +19,7 @@ Download the binary .tar.gz package:
 		git clone git://github.com/spring-projects/rest-shell.git
 		cd rest-shell
 		./gradlew installApp
-		cd build/install/rest-shell-1.2.0.RELEASE
+		cd build/install/rest-shell-1.2.1.RELEASE
 		bin/rest-shell
 
 # Getting Started
