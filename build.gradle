@@ -10,8 +10,8 @@ ext {
   logbackVersion = "1.0.9"
 
   springVersion = "3.2.2.RELEASE"
-  springShellVersion = "1.0.1.BUILD-SNAPSHOT"
-  hateoasVersion = "0.4.0.RELEASE"
+  springShellVersion = "1.0.0.RELEASE"
+  hateoasVersion = "0.9.0.RELEASE"
   jacksonVersion = "1.9.12"
 
   junitVersion = "4.11"
@@ -38,7 +38,7 @@ project.targetCompatibility = 1.6
 
 // Repositories
 repositories {
-  //maven { url "http://repo.springsource.org/libs-snapshot" }
+  maven { url "http://repo.springsource.org/libs-snapshot" }
   //maven { url "http://repo.springsource.org/libs-milestone" }
   maven { url "http://repo.springsource.org/libs-release" }
   maven { url "http://spring-roo-repository.springsource.org/release" }

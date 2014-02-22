@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSession;
@@ -21,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
+import org.springframework.data.rest.shell.util.LinkUtil;
 import org.springframework.hateoas.Link;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -60,7 +62,7 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
   private RestTemplate                     client         = new RestTemplate(requestFactory);
   @Autowired(required = false)
   private ObjectMapper                     mapper         = new ObjectMapper();
-  private Map<String, String>              resources      = new HashMap<String, String>();
+  private Map<String, Link>                resources      = new HashMap<String, Link>();
   private ApplicationEventPublisher ctx;
 
   private static String pad(String s, int len) {
@@ -78,7 +80,7 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
    *
    * @return
    */
-  public Map<String, String> getResources() {
+  public Map<String, Link> getResources() {
     return resources;
   }
 
@@ -134,7 +136,7 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
     } else if(path.getPath().startsWith("http")) {
       requestUri = URI.create(path.getPath());
     } else if(resources.containsKey(path)) {
-      requestUri = UriComponentsBuilder.fromUriString(resources.get(path))
+      requestUri = UriComponentsBuilder.fromUriString(LinkUtil.normalize(resources.get(path)))
                                        .build()
                                        .toUri();
     } else if("/".equals(configCmds.getBaseUri().getPath())) {
@@ -191,7 +193,7 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
 
     // Now build a table
     for(Link l : links) {
-      resources.put(l.getRel(), l.getHref());
+      resources.put(l.getRel(), l);
       sb.append(pad(l.getRel(), maxRelLen))
         .append(pad(l.getHref(), maxHrefLen))
         .append(OsUtils.LINE_SEPARATOR);
