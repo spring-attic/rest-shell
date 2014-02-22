@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.rest.shell.util.LinkUtil;
+import org.springframework.hateoas.Link;
 import org.springframework.shell.core.Completion;
 import org.springframework.shell.core.Converter;
 import org.springframework.shell.core.MethodTarget;
@@ -30,7 +32,7 @@ public class PathOrRelConverter implements Converter<PathOrRel> {
                                              String optionContext) {
     String relOrPath = contextCmds.evalAsString(value);
     if(discoveryCmds.getResources().containsKey(relOrPath)) {
-      return new PathOrRel(discoveryCmds.getResources().get(relOrPath));
+      return new PathOrRel(LinkUtil.normalize(discoveryCmds.getResources().get(relOrPath)));
     } else {
       return new PathOrRel(relOrPath);
     }
@@ -42,7 +44,7 @@ public class PathOrRelConverter implements Converter<PathOrRel> {
                                       String existingData,
                                       String optionContext,
                                       MethodTarget target) {
-    for(Map.Entry<String, String> entry : discoveryCmds.getResources().entrySet()) {
+    for(Map.Entry<String, Link> entry : discoveryCmds.getResources().entrySet()) {
       if(entry.getKey().startsWith(existingData)) {
         completions.add(new Completion(entry.getKey()));
       }

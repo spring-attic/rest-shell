@@ -4,6 +4,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.rest.shell.util.LinkUtil;
 import org.springframework.shell.core.CommandMarker;
 import org.springframework.shell.core.annotation.CliAvailabilityIndicator;
 import org.springframework.shell.core.annotation.CliCommand;
@@ -35,7 +36,7 @@ public class HierarchyCommands implements CommandMarker {
   @CliCommand(value = "up", help = "Traverse one level up in the URL hierarchy.")
   public void up() throws URISyntaxException {
     if(discoveryCmds.getResources().containsKey("parent")) {
-      configCmds.setBaseUri(discoveryCmds.getResources().get("parent"));
+      configCmds.setBaseUri(LinkUtil.normalize(discoveryCmds.getResources().get("parent")));
       return;
     }
 
