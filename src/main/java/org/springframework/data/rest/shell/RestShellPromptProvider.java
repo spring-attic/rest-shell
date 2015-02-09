@@ -35,7 +35,7 @@ public class RestShellPromptProvider implements PromptProvider {
 		return configCmds.getBaseUri().toString() + ":" + "> ";
 	}
 
-	@Override public String name() {
+	@Override public String getProviderName() {
 		return configCmds.getBaseUri().toString();
 	}
 
