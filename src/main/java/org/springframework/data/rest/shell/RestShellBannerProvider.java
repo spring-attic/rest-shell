@@ -32,7 +32,7 @@ public class RestShellBannerProvider implements BannerProvider {
 		return WELCOME;
 	}
 
-	@Override public String name() {
+	@Override public String getProviderName() {
 		return "rest-shell";
 	}
 

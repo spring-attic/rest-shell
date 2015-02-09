@@ -10,7 +10,7 @@ ext {
   logbackVersion = "1.0.9"
 
   springVersion = "3.2.2.RELEASE"
-  springShellVersion = "1.0.1.BUILD-SNAPSHOT"
+  springShellVersion = "1.1.0.RELEASE"
   hateoasVersion = "0.4.0.RELEASE"
   jacksonVersion = "1.9.12"
 
