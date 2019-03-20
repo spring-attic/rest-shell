@@ -24,7 +24,7 @@ Download the binary .tar.gz package:
 
 # Getting Started
 
-This project is a command-line shell that aims to make writing REST-based applications easier. It is based on [spring-shell](http://github.com/springsource/spring-shell) and integrated with [Spring HATEOAS](https://github.com/springsource/spring-hateoas) in such a way that REST resources that output JSON compliant with Spring HATEOAS can be discovered by the shell and interactions with the REST resources become much easier than by manipulating the URLs in bash using a tool like `curl`.
+This project is a command-line shell that aims to make writing REST-based applications easier. It is based on [spring-shell](https://github.com/springsource/spring-shell) and integrated with [Spring HATEOAS](https://github.com/springsource/spring-hateoas) in such a way that REST resources that output JSON compliant with Spring HATEOAS can be discovered by the shell and interactions with the REST resources become much easier than by manipulating the URLs in bash using a tool like `curl`.
 
 The rest-shell provides a number of useful commands for discovering and interacting with REST resources. For example `discover` will discover what resources are available and print out an easily-readable table of rels and URIs that relate to those resources. Once these resources have been discovered, the `rel` of those URIs can be used in place of the URI itself in most operations, thus cutting down on the amount of typing needed to issue HTTP requests to your REST resources.
 
@@ -132,7 +132,7 @@ It's not always desirable to output the results of an HTTP request to the screen
 
 ### Sending complex JSON
 
-Because the `rest-shell` uses the [spring-shell](http://github.com/springsource/spring-shell) underneath, there are limitations on the format of the JSON data you can enter directly into the command line. If your JSON is too complex for the simplistic limitations of the shell `--data` parameter, you can simply load the JSON from a file or from all the files in a directory.
+Because the `rest-shell` uses the [spring-shell](https://github.com/springsource/spring-shell) underneath, there are limitations on the format of the JSON data you can enter directly into the command line. If your JSON is too complex for the simplistic limitations of the shell `--data` parameter, you can simply load the JSON from a file or from all the files in a directory.
 
 When doing a `post` or `put`, you can optionally pass the `--from` parameter. The value of this parameter should either be a file or a directory. If the value is a directory, the shell will read each file that ends with `.json` and make a POST or PUT with the contents of that file. If the parameter is a file, then the `rest-shell` will simpy load that file and POST/PUT that data in that individual file.
 
@@ -177,25 +177,25 @@ The variables are accessible from SpEL expressions which are valid in a number o
 
 Since the rest-shell is aware of environment variables and system properties, you can incorporate external parameters into your interaction with the shell. For example, to externally define a baseUri, you could set a system property before invoking the shell. The shell will incorporate anything defined in the `JAVA_OPTS` environment variable, so you could parameterize your interaction with a REST service.
 
-		JAVA_OPTS="-DbaseUri=http://mylongdomain.com/api" rest-shell
+		JAVA_OPTS="-DbaseUri=https://mylongdomain.com/api" rest-shell
 
 		http://localhost:8080:> discover #{env.baseUri}
 		rel                href
 		=================================================================
 		... resources for this URL
-		http://mylongdomain.com/api:>
+		https://mylongdomain.com/api:>
 
 ### Per-user shell initialization
 
 The rest-shell supports a "dotrc" type of initialization by reading in all files found in the `$HOME/.rest-shell/` directory and assuming they have shell commands in them. The rest-shell will execute these commands on startup. This makes it easy to set variables for commonly-used URIs or possibly set a `baseUri`.
 
-		echo "var set --name svcuri --value http://api.myservice.com/v1" > ~/.rest-shell/00-vars
+		echo "var set --name svcuri --value https://api.myservice.com/v1" > ~/.rest-shell/00-vars
 		echo "discover #{svcuri}" > ~/.rest-shell/01-baseUri
 
 		> rest-shell
 
 		INFO: No resources found...
-		INFO: Base URI set to 'http://api.myservice.com/v1'
+		INFO: Base URI set to 'https://api.myservice.com/v1'
 
 		 ___ ___  __ _____  __  _  _     _ _  __
 		| _ \ __/' _/_   _/' _/| || |   / / | \ \
@@ -204,7 +204,7 @@ The rest-shell supports a "dotrc" type of initialization by reading in all files
 		1.2.0.RELEASE
 
 		Welcome to the REST shell. For assistance hit TAB or type "help".
-		http://api.myservice.com/v1:>
+		https://api.myservice.com/v1:>
 
 ### SSL Certificate Validation
 
