@@ -9,9 +9,9 @@ ext {
   slf4jVersion = "1.7.2"
   logbackVersion = "1.0.9"
 
-  springVersion = "3.2.2.RELEASE"
+  springVersion = "4.1.6.RELEASE"
   springShellVersion = "1.1.0.RELEASE"
-  hateoasVersion = "0.4.0.RELEASE"
+  hateoasVersion = "0.16.0.RELEASE"
   jacksonVersion = "1.9.12"
 
   junitVersion = "4.11"

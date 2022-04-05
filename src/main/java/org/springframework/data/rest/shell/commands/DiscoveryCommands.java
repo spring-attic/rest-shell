@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSession;
@@ -22,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.hateoas.Link;
+import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.ClientHttpRequest;
@@ -62,6 +64,9 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
   private ObjectMapper                     mapper         = new ObjectMapper();
   private Map<String, String>              resources      = new HashMap<String, String>();
   private ApplicationEventPublisher ctx;
+
+  public DiscoveryCommands() {
+  }
 
   private static String pad(String s, int len) {
     char[] pad = new char[len - s.length()];
@@ -228,7 +233,7 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
         if(LOG.isDebugEnabled()) {
           LOG.debug("No 'Accept' header specified, using " + COMPACT_JSON);
         }
-        request.getHeaders().setAccept(Arrays.asList(COMPACT_JSON, MediaType.APPLICATION_JSON));
+        request.getHeaders().setAccept(Arrays.asList(COMPACT_JSON, MediaTypes.HAL_JSON, MediaType.APPLICATION_JSON));
       }
     }
 
@@ -247,6 +252,15 @@ public class DiscoveryCommands implements CommandMarker, ApplicationEventPublish
               String href = String.format("%s", lnkmap.get("href"));
               String rel = String.format("%s", lnkmap.get("rel"));
               links.add(new Link(href, rel));
+            }
+          }
+        } else {
+          o = m.get("_links");
+          if(o instanceof Map) {
+            Map map = (Map) o;
+            for (Object key : map.keySet()) {
+              Map valueMap = (Map) map.get(key);
+              links.add(new Link((String) valueMap.get("href"), (String)key));
             }
           }
         }

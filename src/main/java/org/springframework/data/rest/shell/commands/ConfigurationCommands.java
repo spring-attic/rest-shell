@@ -7,6 +7,7 @@ import java.net.URISyntaxException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.data.rest.shell.context.BaseUriChangedEvent;
@@ -29,7 +30,7 @@ public class ConfigurationCommands implements CommandMarker, ApplicationEventPub
 
   @Autowired
   private ContextCommands contextCmds;
-  private URI                       baseUri = URI.create("http://localhost:8080");
+  private URI                       baseUri = URI.create((System.getenv("REST_SHELL_BASEURI") == null ? "http://localhost:8080": System.getenv("REST_SHELL_BASEURI")));
   private ApplicationEventPublisher ctx     = null;
   private HttpHeaders               headers = new HttpHeaders();
   private ObjectMapper              mapper  = new ObjectMapper();
